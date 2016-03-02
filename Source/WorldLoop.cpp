@@ -1395,9 +1395,9 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 				Logger::log("WRLD", "GAMEMESSAGE", "Unknown Game Message: " + std::to_string(msgid));
 				break;
 			}
-			printData = true;
+			printData = true;*/
 		}
-			break;*/
+			break;
 
 
 
