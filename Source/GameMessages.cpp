@@ -792,8 +792,54 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 		case FIRE_EVENT_SERVER_SIDE: {
 
 			//read packet
+			SessionInfo s = SessionsTable::getClientSession(systemAddress);
+
+			//Some sort of script
+			//e.g. Closing a postbox
+			//For this message, the objid is the ID of the postbox in question
+
+			//Ok actually, this is called from within the LUA script for the post box
+			//in L_MAIL_BOX_INTERACT.lua, with the postbox as game message object and the user later on
+			//this means, that this here is the server endpoint for the lua function:
+			//object:fireEventServerSide('text', object)
+			//Which is exactly what we recieve here.
+
+			unsigned long len;
+			data->Read(len);
+			std::vector<wchar_t> mV;
+			mV.reserve(len);
+			for (unsigned long k = 0; k < len; k++) {
+				wchar_t mC;
+				data->Read(mC);
+				mV.push_back(mC);
+			}
+			std::wstring script(mV.begin(), mV.end());
+			//Logger::log("WRLD", "SCRIPT", "770: " + UtfConverter::ToUtf8(script), LOG_DEBUG);
+			bool f;
+			for (unsigned char k = 0; k < 3; k++) {
+				data->Read(f);
+			}
+
+			unsigned long long object;
+			data->Read(object);
+			ObjectInformation o = getObjectInformation(object);
+			//Logger::log("WRLD", "SCRIPT", "Object: " + getObjectDescription(o, object), LOG_DEBUG);
+
+			bool dat;
+			for (unsigned char i = 0; i < 5; i++) {
+				data->Read(dat);
+			}
 
 			//response
+
+			if (script == L"toggleMail") {
+				Mail::closeMailbox(s.activeCharId);
+			}
+			else {
+				if (script == L"achieve") {
+					die(s.activeCharId, true, true, 0.0F, L"WorldDeathWater", 0.0F, 0.0F, 0.0F, s.activeCharId, s.activeCharId);
+				}
+			}
 
 		} break;
 		case TOGGLE_GHOST_REFERENCE_OVERRIDE: {

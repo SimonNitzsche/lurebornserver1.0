@@ -157,3 +157,36 @@ class DropCommandHandler : public ChatCommandHandler {
 	std::wstring getShortDescription();
 	std::wstring getSyntax();
 };
+
+class RotationCommandHandler : public ChatCommandHandler {
+	void handleCommand(SessionInfo *s, std::vector<std::wstring> * params);
+	std::vector<std::wstring> getCommandNames();
+	std::wstring getDescription();
+	std::wstring getShortDescription();
+	std::wstring getSyntax();
+};
+
+class FlagCommandHandler : public ChatCommandHandler {
+	void handleCommand(SessionInfo *s, std::vector<std::wstring> * params);
+	std::vector<std::wstring> getCommandNames();
+	std::wstring getDescription();
+	std::wstring getShortDescription();
+	std::wstring getSyntax();
+};
+
+class PlayAnimationCommandHandler : public ChatCommandHandler {
+	void handleCommand(SessionInfo *s, std::vector<std::wstring> * params);
+	std::vector<std::wstring> getCommandNames();
+	std::wstring getDescription();
+	std::wstring getShortDescription();
+	std::wstring getSyntax();
+};
+
+class SmashCommandHandler : public ChatCommandHandler {
+public:
+	void handleCommand(SessionInfo *s, std::vector<std::wstring> * params);
+	std::vector<std::wstring> getCommandNames();
+	std::wstring getDescription();
+	std::wstring getShortDescription();
+	std::wstring getSyntax();
+};

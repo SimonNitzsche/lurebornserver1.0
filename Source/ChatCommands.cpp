@@ -224,16 +224,34 @@ void TeleportCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstr
 	float x = 0.0F;
 	float y = 0.0F;
 	float z = 0.0F;
-	if (params->size() > 2){
-		x = std::stof(params->at(0));
-		y = std::stof(params->at(1));
-		z = std::stof(params->at(2));
+	PlayerObject *player = (PlayerObject *)ObjectsManager::getObjectByID(s->activeCharId);
+	if (params->size() > 2) {
+		try
+		{
+			if (params->at(0).substr(0) == L"~") { x = player->getComponent1()->getPosition().x; }
+			else { x = std::stof(params->at(0)); }
+
+			if (params->at(1).substr(0) == L"~") { y = player->getComponent1()->getPosition().y; }
+			else { y = std::stof(params->at(1)); }
+
+			if (params->at(2).substr(0) == L"~") { z = player->getComponent1()->getPosition().z; }
+			else { z = std::stof(params->at(2)); }
+		}
+		catch (const std::exception&)
+		{
+			Chat::sendChatMessage(player->objid, L"Unable to teleport!");
+		}
+	}
+	else {
+		x = player->getComponent1()->getPosition().x;
+		y = player->getComponent1()->getPosition().y;
+		z = player->getComponent1()->getPosition().z;
 	}
 	bs->Write(x);
 	bs->Write(y);
 	bs->Write(z);
 	std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s->zone);
-	for (unsigned int k = 0; k < sessionsz.size(); k++){
+	for (unsigned int k = 0; k < sessionsz.size(); k++) {
 		WorldServer::sendPacket(bs, sessionsz.at(k).addr);
 	}
 }
@@ -1359,4 +1377,143 @@ std::wstring DropCommandHandler::getShortDescription() {
 
 std::wstring DropCommandHandler::getSyntax() {
 	return L"<ID>";
+}
+
+void PlayAnimationCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
+	if (params->size() > 0) {
+		GameMSG::playAnimation(s->activeCharId, params->at(0), true);
+	}
+	else {
+		Chat::sendChatMessage(s->addr, L"Syntax: anim <animID>");
+	}
+}
+
+std::vector<std::wstring> PlayAnimationCommandHandler::getCommandNames() {
+	return{ L"animation", L"playanimation", L"anim" };
+}
+
+std::wstring PlayAnimationCommandHandler::getDescription() {
+	return L"Play Animation";
+}
+std::wstring PlayAnimationCommandHandler::getShortDescription() {
+	return L"Play Animation";
+}
+std::wstring PlayAnimationCommandHandler::getSyntax() {
+	return L"<animID>";
+}
+
+void RotationCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
+	PlayerObject *player = (PlayerObject *)ObjectsManager::getObjectByID(s->activeCharId);
+	std::wstringstream wstr;
+	if (player != NULL) {
+		COMPONENT1_ROTATION rot = player->getComponent1()->getRotation();
+		wstr << L"Rotation: (" << rot.x << "|" << rot.y << "|" << rot.z << "|" << rot.w << ")";
+	}
+	Chat::sendChatMessage(s->addr, wstr.str());
+}
+
+std::vector<std::wstring> RotationCommandHandler::getCommandNames() {
+	return{ L"rotation", L"rot" };
+}
+
+std::wstring RotationCommandHandler::getDescription() {
+	return L"Displays the rotation";
+}
+
+std::wstring RotationCommandHandler::getShortDescription() {
+	return L"Display Rotation";
+}
+
+std::wstring RotationCommandHandler::getSyntax() {
+	return L"";
+}
+
+void FlagCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
+	SystemAddress systemAddress = s->addr;
+	long long objid = s->activeCharId;
+	ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(objid);
+	if (cinfo.info.gmlevel > 0) {
+		if (params->size() > 1) {
+			if (params->at(0) == L"on" || params->at(0) == L"off") {
+				unsigned char flag;
+				long long flagID;
+				if (params->at(0) == L"on") { flag = 1; }
+				if (params->at(0) == L"off") { flag = 0; }
+				flagID = std::stoi(params->at(1));
+				RakNet::BitStream *pc = WorldServerPackets::InitGameMessage(objid, 472);
+				pc->Write((unsigned char)flag);
+				pc->Write((unsigned long)flagID);
+				WorldServer::sendPacket(pc, systemAddress);
+			}
+			else {
+				Chat::sendChatMessage(objid, L"/setflag <on|off> <flagID>");
+			}
+		}
+		else {
+			Chat::sendChatMessage(objid, L"/setflag <on|off> <flagID>");
+		}
+	}
+	else {
+		Chat::sendChatMessage(objid, L"Sorry, but you have less permission than required!");
+	}
+}
+
+std::vector<std::wstring> FlagCommandHandler::getCommandNames() {
+	return{ L"setflag" };
+}
+
+std::wstring FlagCommandHandler::getDescription() {
+	return L"";
+}
+
+std::wstring FlagCommandHandler::getShortDescription() {
+	return L"";
+}
+
+std::wstring FlagCommandHandler::getSyntax() {
+	return L"";
+}
+
+void SmashCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
+	ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(s->activeCharId);
+	if (cinfo.info.gmlevel > 0) {
+		if (params->size() == 1) {
+			long long soid = stoull(params->at(0));
+			GameMSG::die(soid, true, true, 1.0F, L"SmashByPlayer", 1.0F, 1.0F, 1.0F, s->activeCharId, s->activeCharId);
+			SessionInfo s = SessionsTable::getClientSession(SessionsTable::findCharacter(soid));
+			RakNet::BitStream *bs = WorldServer::initPacket(RemoteConnection::CLIENT, ClientPacketID::SERVER_GAME_MSG);
+
+			bs->Write(s.activeCharId);
+			bs->Write((unsigned short)37);
+
+			std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
+			for (unsigned int k = 0; k < sessionsz.size(); k++) {
+				WorldServer::sendPacket(bs, sessionsz.at(k).addr);
+			}
+		}
+		else
+		{
+			Chat::sendChatMessage(s->addr, L"Syntax: " + SmashCommandHandler::getSyntax());
+		}
+	}
+	else
+	{
+		Chat::sendChatMessage(s->addr, L"You do not have permsission for that command");
+	}
+}
+
+std::vector<std::wstring> SmashCommandHandler::getCommandNames() {
+	return{ L"smsh", L"smash" };
+}
+
+std::wstring SmashCommandHandler::getDescription() {
+	return L"Smash an Object";
+}
+
+std::wstring SmashCommandHandler::getShortDescription() {
+	return L"Smash an Object";
+}
+
+std::wstring SmashCommandHandler::getSyntax() {
+	return L"<oID>";
 }
