@@ -3,9 +3,11 @@
 #include "CharactersDB.h"
 #include "InventoryDB.h"
 #include "WorldServer.h"
+#include "WorldConnection.h"
 #include "Packet.h"
 #include "UtfConverter.h"
 #include "Logger.h"
+#include "GameMessages.h"
 
 #include <iostream>
 
@@ -343,7 +345,7 @@ void Friends::handleFriendRequestResponse(long long responder, std::wstring name
 	}
 }
 
-void Chat::sendChatMessage(SystemAddress addr, std::wstring message, std::wstring sender, bool isMythran){
+void Chat::sendChatMessage(SystemAddress addr, std::wstring message, std::wstring sender, bool isMythran, bool displayChatBubble){
 	RakNet::BitStream *aw = WorldServer::initPacket(RemoteConnection::CHAT, ChatPacketID::GENERAL_CHAT_MESSAGE);
 	unsigned char u8 = 0;
 	unsigned short u16 = 0;
@@ -376,6 +378,10 @@ void Chat::sendChatMessage(SystemAddress addr, std::wstring message, std::wstrin
 		aw->Write(message.at(k));
 	}
 	aw->Write(u16);
+	if (displayChatBubble) {
+		RakNet::BitStream *cb = WorldServerPackets::InitGameMessage(SessionsTable::getClientSession(addr).activeCharId, GameMessage::DISPLAY_CHAT_BUBBLE);
+		WorldServer::sendPacket(cb, addr);
+	}
 	WorldServer::sendPacket(aw, addr);
 }
 
@@ -395,7 +401,7 @@ void Chat::broadcastChatMessage(unsigned short zone, std::wstring message, std::
 	for (unsigned int k = 0; k < sess.size(); k++){
 		Logger::log("GAME", "CHAT", "Broadcast to " + std::to_string(sess.at(k).activeCharId), LOG_DEBUG);
 		if (sess.at(k).phase > SessionPhase::PHASE_AUTHENTIFIED){
-			Chat::sendChatMessage(sess.at(k).addr, message, sender, isMythran);
+			Chat::sendChatMessage(sess.at(k).addr, message, sender, isMythran, true);
 		}
 	}
 }

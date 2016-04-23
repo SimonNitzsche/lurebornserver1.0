@@ -168,6 +168,7 @@ enum WorldPacketID : unsigned char {
 	CLIENT_GM_SET_FREE_TRIAL_STATUS,
 	UGC_DOWNLOAD_FAILED = 120,
 	CLIENT_SURVEY = 32,
+	SERVER_STATES = 52,
 };
 
 enum ClientPacketID : unsigned short{

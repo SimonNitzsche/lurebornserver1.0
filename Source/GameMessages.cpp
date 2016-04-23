@@ -6,6 +6,12 @@
 #include "WorldConnection.h"
 #include "CDClientDB.h"
 #include "ChatCommands.h"
+#include "Account.h"
+#include "Worlds.h"
+#include "PlayerObject.h"
+#include "LootObject.h"
+#include "InventoryDB.h"
+#include "UtfConverter.h"
 
 #include <map>
 #include <sstream>
@@ -519,9 +525,21 @@ void GameMSG::resurrect(long long charid, bool immediate)
 {
 	SessionInfo s = SessionsTable::getClientSession(SessionsTable::findCharacter(charid));
 
-	RakNet::BitStream * bs = WorldServerPackets::InitGameMessage(s.activeCharId, RESURRECT);
-	bs->Write((bool)false);
-	WorldServer::sendPacket(bs, s.addr);
+	SessionInfo *t = &SessionsTable::getClientSession(s.addr);
+	if (s.activeCharId > 0) {
+		long long objid = s.activeCharId;
+		ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(objid);
+		
+		WorldServerPackets::CreateCharacter(s.addr, charid);
+
+		RakNet::BitStream * bs = WorldServerPackets::InitGameMessage(s.activeCharId, RESURRECT);
+		bs->Write((bool)false);
+		WorldServer::sendPacket(bs, s.addr);
+		
+		/*PlayerObject *player = (PlayerObject*) ObjectsManager::getObjectByID(s.activeCharId);
+		ObjectsManager::clientJoinWorld(player, s.addr);
+		Session::enter(s.activeCharId, s.zone);*/
+	}
 }
 
 void GameMSG::knockback(long long charid, long long casterid, COMPONENT1_POSITION position) {

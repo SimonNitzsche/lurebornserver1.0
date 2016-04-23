@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Auth|Win32">
       <Configuration>Auth</Configuration>
@@ -23,19 +23,19 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Auth|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -109,6 +109,7 @@
     <ClInclude Include="LootObject.h" />
     <ClInclude Include="NPCObject.h" />
     <ClInclude Include="ObjectID.h" />
+    <ClInclude Include="sha512.h" />
     <ClInclude Include="SmashableObject.h" />
     <ClInclude Include="SpawnerObject.h" />
     <ClInclude Include="SQLiteDatabase.h" />
@@ -160,6 +161,7 @@
     <ClCompile Include="LootObject.cpp" />
     <ClCompile Include="NPCObject.cpp" />
     <ClCompile Include="ObjectID.cpp" />
+    <ClCompile Include="sha512.cpp" />
     <ClCompile Include="SmashableObject.cpp" />
     <ClCompile Include="SpawnerObject.cpp" />
     <ClCompile Include="SQLiteDatabase.cpp" />
@@ -208,6 +210,9 @@
     <ProjectReference Include="RakNet\RakNet.vcxproj">
       <Project>{767ceb9f-4c3d-46fc-a225-e0f3800dc29c}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="sha512-license.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -642,6 +642,9 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 			}
 		}
 			break;
+		case WorldPacketID::SERVER_STATES: {
+			//Todo
+		}
 		// 5
 		case WorldPacketID::CLIENT_GAME_MSG:
 		{
@@ -1601,6 +1604,8 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 				pc->Write((unsigned long)185);
 				pc->Write((unsigned char)0);
 				WorldServer::sendPacket(pc, systemAddress);
+
+				Logger::log("WRLD", "PARSER", "Enter session.");
 
 				Session::enter(s.activeCharId, zid);
 
