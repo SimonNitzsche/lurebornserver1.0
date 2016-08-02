@@ -12,6 +12,8 @@
 #include "LootObject.h"
 #include "InventoryDB.h"
 #include "UtfConverter.h"
+#include "Logger.h"
+#include "Packet.h"
 
 #include <map>
 #include <sstream>
@@ -533,7 +535,7 @@ void GameMSG::resurrect(long long charid, bool immediate)
 		WorldServerPackets::CreateCharacter(s.addr, charid);
 
 		RakNet::BitStream * bs = WorldServerPackets::InitGameMessage(s.activeCharId, RESURRECT);
-		bs->Write((bool)false);
+		bs->Write((bool)immediate);
 		WorldServer::sendPacket(bs, s.addr);
 		
 		/*PlayerObject *player = (PlayerObject*) ObjectsManager::getObjectByID(s.activeCharId);
@@ -658,6 +660,17 @@ void GameMSG::displayZoneSummary(long long charid, bool isProperty, bool isZoneS
 	bs->Write((unsigned long long)charid);
 
 	WorldServer::sendPacket(bs, s.addr);
+}
+
+void GameMSG::sendLevelUpMessage(long long charid) {
+	SessionInfo s = SessionsTable::getClientSession(SessionsTable::findCharacter(charid));
+	std::vector<SessionInfo> wsessions = SessionsTable::getClientsInWorld(s.zone);
+	std::wstring name;
+	ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(s.activeCharId);
+	name.assign(cinfo.info.name.begin(), cinfo.info.name.end());
+	for (unsigned int i = 0; i < wsessions.size(); i++){
+		Chat::sendChatMessage(wsessions.at(i).activeCharId, name + L" is now at level " + std::to_wstring(cinfo.info.level + 1), L"System", false);
+	}
 }
 
 /*unrefactored stuff here*/
@@ -904,10 +917,17 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 
 		} break;
 		case SYNC_SKILL: {
-
-			//read packet
-
-			//response
+			bool flag;
+			data->Read(flag);
+			unsigned long d1;
+			data->Read(d1);
+			Logger::log("WRLD", "COMBAT", std::to_string(flag) + "|" + std::to_string(d1));
+			PacketTools::printBytes(data, d1);
+			unsigned long num1;
+			data->Read(num1);
+			unsigned long num2;
+			data->Read(num2);
+			Logger::log("WRLD", "COMBAT", std::to_string(num1) + "|" + std::to_string(num2));
 
 		} break;
 		case USED_INFORMATION_PLAQUE: {
@@ -916,6 +936,16 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 
 			//response
 
+		} break;
+		case LEVEL_UP: {
+
+			//read packet
+			SessionInfo s = SessionsTable::getClientSession(systemAddress);
+			ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(s.activeCharId);
+
+			Database::Query("UPDATE `characters` SET `level` = '" + std::to_string(cinfo.info.level + 1) + "' WHERE `objectID` = '" + std::to_string(s.activeCharId) + "';");
+			GameMSG::sendLevelUpMessage(s.activeCharId);
+			//response
 		} break;
 	}
 

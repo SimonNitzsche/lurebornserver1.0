@@ -20,6 +20,7 @@
 #include "serverLoop.h"
 #include "ObjectID.h"
 #include "CharactersDB.h"
+#include "GenericObject.h"
 
 // SQLite
 #include "SQLiteDatabase.h"
@@ -1072,21 +1073,16 @@ void SpawnCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring
 				}
 				else if (type == "Smashables")
 				{
-					SmashableObject * smashable = new SmashableObject(stoul(params->at(0)), cinfo.lastPlace.zoneID);
-
-					SimplePhysicsComponent *c3 = smashable->getSimplePhysicsComponent();
-
-					COMPONENT3_POSITION pos = COMPONENT3_POSITION(player->getComponent1()->getPosition().x, player->getComponent1()->getPosition().y, player->getComponent1()->getPosition().z);
-					COMPONENT3_ROTATION rot = COMPONENT3_ROTATION(player->getComponent1()->getRotation().x, player->getComponent1()->getRotation().y, player->getComponent1()->getRotation().z, player->getComponent1()->getRotation().w);
-
-					c3->setPosition(pos);
-					c3->setRotation(rot);
+					COMPONENT1_POSITION pos = COMPONENT1_POSITION(player->getComponent1()->getPosition().x, player->getComponent1()->getPosition().y, player->getComponent1()->getPosition().z);
+					COMPONENT1_ROTATION rot = COMPONENT1_ROTATION(player->getComponent1()->getRotation().x, player->getComponent1()->getRotation().y, player->getComponent1()->getRotation().z, player->getComponent1()->getRotation().w);
+					GenericObject * smashable = new GenericObject(stoul(params->at(0)), cinfo.lastPlace.zoneID, pos, rot, COMPONENT1_VELOCITY(), COMPONENT1_VELOCITY_ANGULAR());
 
 					ObjectsManager::registerObject(smashable);
 					ObjectsManager::create(smashable);
 
 					std::wstringstream wss;
 					wss << "Spawned Smashable Object ID: " << smashable->objid;
+					Chat::sendChatMessage(s->addr, wss.str());
 				}
 				else 
 				{

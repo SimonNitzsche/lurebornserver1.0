@@ -2,6 +2,7 @@
 #include "Worlds.h"
 #include "PlayerObject.h"
 #include "SpawnerObject.h"
+#include <algorithm>
 
 #include "ObjectID.h"
 
@@ -19,18 +20,18 @@
 
 using namespace std;
 
-GenericObject::GenericObject(unsigned long lot, unsigned long currentZone) {
+GenericObject::GenericObject(unsigned long lot, unsigned long currentZone, COMPONENT1_POSITION pos, COMPONENT1_ROTATION rot, COMPONENT1_VELOCITY vel, COMPONENT1_VELOCITY_ANGULAR vel_ang) {
 	Logger::log("REPL", "OBJ", "Initializing New Generic Object");
 
 	this->zoneID = currentZone;
-	initializeObject(lot);
+	initializeObject(lot, pos, rot, vel, vel_ang);
 }
 
 GenericObject::~GenericObject() {
 
 }
 
-void GenericObject::initializeObject(unsigned long lot) {
+void GenericObject::initializeObject(unsigned long lot, COMPONENT1_POSITION pos, COMPONENT1_ROTATION rot, COMPONENT1_VELOCITY vel, COMPONENT1_VELOCITY_ANGULAR vel_ang) {
 	this->objid = ObjectID::generateObjectID();
 	this->LOT = lot;
 
@@ -38,11 +39,14 @@ void GenericObject::initializeObject(unsigned long lot) {
 	this->spawnerObject = spawner;
 	this->spawnerObjID = spawner->objid;
 	this->spawner_node_id = 0;
+	this->world.zone = this->zoneID;
 
 	stringstream conponentsStream;
 	conponentsStream << "SELECT `component_id`, `component_type` FROM `ComponentsRegistry` WHERE `id` = " << lot << ";";
 
 	sqdb::Statement components = SQLiteDatabase::Query("cdclient.sqlite", conponentsStream.str());
+
+	std::vector<ReplicaComponent *> list;
 
 	while (components.Next())
 	{
@@ -51,29 +55,85 @@ void GenericObject::initializeObject(unsigned long lot) {
 
 		switch (component_type)
 		{
-		case CONTROLABLE_PHYSICS_COMPONENT: 
-			this->addComponent(new ControllablePhysicsComponent());
+		case CONTROLABLE_PHYSICS_COMPONENT: {
+			ControllablePhysicsComponent * comp = new ControllablePhysicsComponent();
+			comp->setPosition(COMPONENT1_POSITION(pos.x, pos.y, pos.z));
+			comp->setRotation(COMPONENT1_ROTATION(rot.x, rot.y, rot.z, rot.w));
+			comp->setVelocity(COMPONENT1_VELOCITY(vel.x, vel.y, vel.z));
+			comp->setAngularVelocity(COMPONENT1_VELOCITY_ANGULAR(vel_ang.x, vel_ang.y, vel_ang.z));
+			list.push_back(comp);
 			break;
+		}
 		case RENDER_COMPONENT: 
-			this->addComponent(new RenderComponent());
+			list.push_back(new RenderComponent());
 			break;
-		case SIMPLE_PHYSICS_COMPONENT: 
-			this->addComponent(new SimplePhysicsComponent());
+		case SIMPLE_PHYSICS_COMPONENT: {
+			SimplePhysicsComponent *comp = new SimplePhysicsComponent();
+			comp->setPosition(COMPONENT3_POSITION(pos.x, pos.y, pos.z));
+			comp->setRotation(COMPONENT3_ROTATION(rot.x, rot.y, rot.z, rot.w));
+			list.push_back(comp);
 			break;
+		}
 		case CHARACTER_COMPONENT: 
-			this->addComponent(new CharacterComponent());
+			list.push_back(new CharacterComponent());
 			break;
 		case SCRIPT_COMPONENT: 
-			this->addComponent(new ScriptComponent());
+			list.push_back(new ScriptComponent());
 			break;
 		case BOUNCER_COMPONENT: 
-			this->addComponent(new BouncerComponent());
+			list.push_back(new BouncerComponent());
 			break;
-		case DESTRUCTABLE_COMPONENT: 
-			this->addComponent(new DestructibleComponent());
+		case DESTRUCTABLE_COMPONENT: {
+			DestructibleComponent *comp = new DestructibleComponent();
+
+			COMPONENT7_DATA3 d3 = COMPONENT7_DATA3();
+			d3.d1 = 0; d3.d2 = 0; d3.d3 = 0; d3.d4 = 0; d3.d5 = 0; d3.d6 = 0; d3.d7 = 0; d3.d8 = 0; d3.d9 = 0;
+
+			comp->setData3(d3);
+
+
+			stringstream destructibleStream;
+			destructibleStream << "SELECT `component_id` FROM `ComponentsRegistry` WHERE `id` = " << lot << " AND `component_type` = " << 7 << ";";
+
+			sqdb::Statement destructibleStatement = SQLiteDatabase::Query("cdclient.sqlite", destructibleStream.str());
+			while (destructibleStatement.Next()) {
+				long component_id = destructibleStatement.GetField(0).GetInt();
+
+				stringstream destructibleDataStream;
+				destructibleDataStream << "SELECT `faction`, `life`, `imagination`, `armor` FROM `DestructibleComponent` WHERE `id` = " << component_id << ";";
+
+				sqdb::Statement dataStatement = SQLiteDatabase::Query("cdclient.sqlite", destructibleDataStream.str());
+				while (dataStatement.Next()) {
+					long factionID = dataStatement.GetField(0).GetInt();
+					long health = dataStatement.GetField(1).GetInt();
+					long imagination = dataStatement.GetField(2).GetInt();
+					long armor = dataStatement.GetField(3).GetInt();
+
+					COMPONENT7_DATA4 d4 = COMPONENT7_DATA4();
+					d4.health = health;
+					d4.maxHealth = health;
+					d4.maxHealthN = health;
+
+					d4.imagination = imagination;
+					d4.maxImagination = imagination;
+					d4.maxImaginationN = imagination;
+
+					d4.armor = armor;
+					d4.maxArmor = armor;
+					d4.maxArmorN = armor;
+
+					comp->setData4(d4);
+					comp->getData4_1Ref()->push_back(factionID);
+					comp->setTrigger(true);
+					comp->setData4_4_1(false);
+					comp->setData5(false);
+				}
+				list.push_back(comp);
+			}
 			break;
+		}
 		case SKILL_COMPONENT: 
-			this->addComponent(new SkillComponent());
+			list.push_back(new SkillComponent());
 			break;
 		case SPAWNER_COMPONENT:
 			
@@ -94,11 +154,28 @@ void GenericObject::initializeObject(unsigned long lot) {
 			
 			break;
 		case VENDOR_COMPONENT: 
-			this->addComponent(new VendorComponent());
+			list.push_back(new VendorComponent());
 			break;
-		case INVENTORY_COMPONENT: 
-
+		case INVENTORY_COMPONENT: {
+			InventoryComponent * comp = new InventoryComponent();
+			stringstream itemsQ;
+			itemsQ << "SELECT group_concat(`itemid`) FROM `InventoryComponent` WHERE `id` = '" << component_id << "';";
+			sqdb::Statement items = SQLiteDatabase::Query("cdclient.sqlite", itemsQ.str());
+			if (items.Next()){
+				stringstream stringstream(items.GetField(0).GetText());
+				string token;
+				unsigned long long oldID = 0;
+				while (getline(stringstream, token, ',')) {
+					unsigned long equipLOT = stoul(token);
+					LootObject *lootObj = new LootObject(lot, ObjectID::generateObjectID());
+					comp->equipNPCItem(equipLOT, lootObj->objid);
+					equippedItems.push_back(lootObj);
+				}
+				comp->setData2(0);
+			}
+			list.push_back(comp);
 			break;
+		}
 		case PROJECTILE_PHYSICS_COMPONENT:
 
 			break;
@@ -106,7 +183,7 @@ void GenericObject::initializeObject(unsigned long lot) {
 
 			break;
 		case RIGID_BODY_PHANTOM_PHYSICS_COMPONENT:
-			this->addComponent(new RigidBodyPhantomPhysicsComponent());
+			list.push_back(new RigidBodyPhantomPhysicsComponent());
 			break;
 		case CHEST_COMPONENT:
 
@@ -121,7 +198,7 @@ void GenericObject::initializeObject(unsigned long lot) {
 
 			break;
 		case PET_COMPONENT:
-			this->addComponent(new PetComponent());
+			list.push_back(new PetComponent());
 			break;
 		case PLATFORM_BOUNDRY_COMPONENT:
 
@@ -133,7 +210,7 @@ void GenericObject::initializeObject(unsigned long lot) {
 
 			break;
 		case VEHICLE_PHYSICS_COMPONENT:
-			this->addComponent(new VehiclePhysicsComponent());
+			list.push_back(new VehiclePhysicsComponent());
 			break;
 		case MOVEMENT_AI_COMPONENT:
 
@@ -154,11 +231,15 @@ void GenericObject::initializeObject(unsigned long lot) {
 
 			break;
 		case SCRIPTED_ACTIVITY_COMPONENT: 
-			this->addComponent(new ScriptedActivityComponent());
+			list.push_back(new ScriptedActivityComponent());
 			break;
-		case PHANTOM_PHYSICS_COMPONENT:
-			this->addComponent(new PhantomPhysicsComponent());
+		case PHANTOM_PHYSICS_COMPONENT: {
+			PhantomPhysicsComponent *comp = new PhantomPhysicsComponent;
+			comp->setPosition(COMPONENT40_POSITION(pos.x, pos.y, pos.z));
+			comp->setRotation(COMPONENT40_ROTATION(rot.x, rot.y, rot.z, rot.w));
+			list.push_back(comp);
 			break;
+		}
 		case SPRINGPAD_COMPONENT:
 
 			break;
@@ -175,7 +256,7 @@ void GenericObject::initializeObject(unsigned long lot) {
 
 			break;
 		case VEHICLE_PHYSICS_2_COMPONENT:
-			this->addComponent(new VehiclePhysicsComponent());
+			list.push_back(new VehiclePhysicsComponent());
 			break;
 		case PHYSICS_SYSTEM_COMPONENT:
 
@@ -184,7 +265,7 @@ void GenericObject::initializeObject(unsigned long lot) {
 
 			break;
 		case SWITCH_COMPONENT:
-			this->addComponent(new SwitchComponent());
+			list.push_back(new SwitchComponent());
 			break;
 		case MINIGAME_COMPONENT:
 
@@ -214,7 +295,7 @@ void GenericObject::initializeObject(unsigned long lot) {
 
 			break;
 		case BASE_COMBAT_AI_COMPONENT:
-			this->addComponent(new BaseCombatAIComponent());
+			list.push_back(new BaseCombatAIComponent());
 			break;
 		case MODULE_ASSEMBLY_COMPONENT:
 
@@ -241,7 +322,7 @@ void GenericObject::initializeObject(unsigned long lot) {
 
 			break;
 		case RACING_CONTROL_COMPONENT:
-			this->addComponent(new RacingControlComponent());
+			list.push_back(new RacingControlComponent());
 			break;
 		case FACTION_TRIGGER_COMPONENT:
 
@@ -289,10 +370,10 @@ void GenericObject::initializeObject(unsigned long lot) {
 
 			break;
 		case UNKNOWN_107_COMPONENT:
-			this->addComponent(new Index36Component());
+			list.push_back(new Index36Component());
 			break;
 		case UNKNOWN_108_COMPONENT:
-			this->addComponent(new Component108());
+			list.push_back(new Component108());
 			break;
 		case UNKOWN_113_COMPONENT:
 
@@ -306,8 +387,26 @@ void GenericObject::initializeObject(unsigned long lot) {
 		default:
 			break;
 		}
+		sort(list.begin(), list.end(), compareComponent);
+		for (int i = 0; i < list.size(); i++){
+			this->addComponent(list.at(i));
+		}
 	}
 }
 
+COMPONENT1_POSITION GenericObject::getPosition() {
+	if (this->getComponent(SIMPLE_PHYSICS_COMPONENT) != NULL){
+		SimplePhysicsComponent * phy = (SimplePhysicsComponent *)this->getComponent(SIMPLE_PHYSICS_COMPONENT);
+		return COMPONENT1_POSITION(phy->getPosition().posX, phy->getPosition().posY, phy->getPosition().posZ);
+	}
+}
+
+ControllablePhysicsComponent *GenericObject::getControllablePhysicsComponent() { return (ControllablePhysicsComponent*) this->getComponent(1); }
+SimplePhysicsComponent  *GenericObject::getSimplePhysicsComponent() { return (SimplePhysicsComponent *) this->getComponent(3); }
+DestructibleComponent *GenericObject::getDestructibleComponent(){ return (DestructibleComponent *)this->getComponent(7); }
+InventoryComponent *GenericObject::getInventoryComponent(){ return (InventoryComponent *)this->getComponent(17); }
+long long GenericObject::getObjectID() {
+	return this->objid;
+}
 
 

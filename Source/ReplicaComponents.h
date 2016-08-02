@@ -10,7 +10,13 @@ class ReplicaComponent{
 public:
 	virtual void writeToPacket(RakNet::BitStream *packet, REPLICA_PACKET_TYPE packetType) = 0;
 	virtual unsigned int getComponentID() = 0;
+	bool operator<(const ReplicaComponent &r) const {
+		return this->order < r.order;
+	}
+	int order = 0;
 };
+
+bool compareComponent(const ReplicaComponent *a, const ReplicaComponent *b);
 
 #pragma region Componet108 (Name Unknown)
 
@@ -22,6 +28,7 @@ private:
 	bool flag3;
 	long data3_1;
 	bool data4;
+	int order;
 public:
 	Component108();
 	~Component108();
@@ -171,6 +178,7 @@ private:
 	bool flag6_3_1;
 	COMPONENT1_DATA6_3_1 data6_3_1;
 	bool flag6_4;
+	int order;
 public:
 	ControllablePhysicsComponent();
 	~ControllablePhysicsComponent();
@@ -264,6 +272,7 @@ private:
 	bool flag4;
 	COMPONENT3_POSITION position;
 	COMPONENT3_ROTATION rotation;
+	int order;
 public:
 	SimplePhysicsComponent();
 	~SimplePhysicsComponent();
@@ -339,6 +348,7 @@ class RigidBodyPhantomPhysicsComponent : public ReplicaComponent {
 private:
 	bool flag1;
 	COMPONENT20_POSITION pos;
+	int order;
 	COMPONENT20_ROTATION rot;
 public:
 	RigidBodyPhantomPhysicsComponent();
@@ -366,6 +376,7 @@ private:
 
 	bool flag3;
 	bool data3;
+	int order;
 public:
 	VehiclePhysicsComponent();
 	~VehiclePhysicsComponent();
@@ -452,6 +463,7 @@ private:
 	COMPONENT40_DATA2 data2;
 	bool flag4_2;
 	COMPONENT40_DATA3 data3;
+	int order;
 public:
 	PhantomPhysicsComponent();
 	~PhantomPhysicsComponent();
@@ -569,6 +581,7 @@ private:
 	unsigned long data4_4_2;
 	bool flag5;
 	bool data5;
+	int order;
 public:
 	DestructibleComponent();
 	~DestructibleComponent();
@@ -602,7 +615,7 @@ public:
 class SwitchComponent : public ReplicaComponent {
 private:
 	bool switchState = false;
-
+	int order;
 public:
 	SwitchComponent();
 	~SwitchComponent();
@@ -632,7 +645,7 @@ private:
 	short data5_1_1;
 	char length2;
 	short data5_1_2;
-
+	int order;
 public:
 	PetComponent();
 	~PetComponent();
@@ -722,6 +735,7 @@ private:
 	unsigned long data10;
 	bool flag11;
 	COMPONENT4_DATA11 data11;
+	int order;
 public:
 	CharacterComponent();
 	~CharacterComponent();
@@ -782,6 +796,7 @@ class InventoryComponent : public ReplicaComponent{
 private:
 	std::vector<COMPONENT17_EQUIPMENT> equipment;
 	unsigned long data2 = 0; //May be a count for something
+	int order;
 public:
 	InventoryComponent();
 	~InventoryComponent();
@@ -803,6 +818,7 @@ public:
 class ScriptComponent : public ReplicaComponent {
 private:
 	bool flag1;
+	int order;
 public:
 	ScriptComponent();
 	~ScriptComponent();
@@ -819,6 +835,8 @@ public:
 #pragma region SkillComponent (Component 9)
 
 class SkillComponent : public ReplicaComponent{
+private:
+	int order;
 public:
 	SkillComponent();
 	~SkillComponent();
@@ -835,6 +853,7 @@ private:
 	bool flag1;
 	long data1;
 	long long data2;
+	int order;
 public:
 	BaseCombatAIComponent();
 	~BaseCombatAIComponent();
@@ -860,6 +879,7 @@ private:
 	bool flag1;
 	bool flag1_1;
 	bool flag1_2;
+	int order;
 public:
 	VendorComponent();
 	~VendorComponent();
@@ -883,6 +903,7 @@ class BouncerComponent : public ReplicaComponent {
 private:
 	bool flag1;
 	bool data1;
+	int order;
 public:
 	BouncerComponent();
 	~BouncerComponent();
@@ -915,6 +936,7 @@ private:
 	float data2_8;
 	float data2_9;
 	float data2_10;
+	int order;
 public:
 	ScriptedActivityComponent();
 	~ScriptedActivityComponent();
@@ -993,6 +1015,7 @@ private:
 	COMPONENT71_DATA3 data3;
 	bool flag5;
 	COMPONENT71_DATA4 data4;
+	int order;
 public:
 	RacingControlComponent();
 	~RacingControlComponent();
@@ -1023,6 +1046,8 @@ public:
 #pragma region RenderComponent (Component 2)
 
 class RenderComponent : public ReplicaComponent{
+private:
+	int order;
 public:
 	RenderComponent();
 	~RenderComponent();
@@ -1035,6 +1060,8 @@ public:
 #pragma region Index36Component (Component 107)
 
 class Index36Component : public ReplicaComponent{
+private:
+	int order;
 public:
 	Index36Component();
 	~Index36Component();
