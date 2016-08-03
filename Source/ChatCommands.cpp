@@ -1081,7 +1081,7 @@ void SpawnCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring
 					ObjectsManager::create(smashable);
 
 					std::wstringstream wss;
-					wss << "Spawned Smashable Object ID: " << smashable->objid;
+					wss << "Spawned Smashable Object ID: " << smashable->objid << " - LOT: " << smashable->LOT << " - W: " << smashable->world.zone << " - P: " << pos.x << "/" << pos.y << "/" << pos.z;
 					Chat::sendChatMessage(s->addr, wss.str());
 				}
 				else 

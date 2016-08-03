@@ -34,6 +34,7 @@ GenericObject::~GenericObject() {
 void GenericObject::initializeObject(unsigned long lot, COMPONENT1_POSITION pos, COMPONENT1_ROTATION rot, COMPONENT1_VELOCITY vel, COMPONENT1_VELOCITY_ANGULAR vel_ang) {
 	this->objid = ObjectID::generateObjectID();
 	this->LOT = lot;
+	this->name = std::to_wstring(this->objid);
 
 	SpawnerObject *spawner = new SpawnerObject(ObjectID::generateSpawnerID());
 	this->spawnerObject = spawner;
@@ -387,10 +388,12 @@ void GenericObject::initializeObject(unsigned long lot, COMPONENT1_POSITION pos,
 		default:
 			break;
 		}
-		sort(list.begin(), list.end(), compareComponent);
-		for (int i = 0; i < list.size(); i++){
-			this->addComponent(list.at(i));
-		}
+	}
+	sort(list.begin(), list.end(), compareComponent);
+	for (int i = 0; i < list.size(); i++){
+		ReplicaComponent *r = list.at(i);
+		Logger::log("GENERIC", "OBJECT", std::to_string(r->serialization));
+		this->addComponent(list.at(i));
 	}
 }
 

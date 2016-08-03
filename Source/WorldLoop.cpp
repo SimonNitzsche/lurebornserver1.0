@@ -1572,7 +1572,7 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 				d4.maxArmorN = 0.0f;
 
 				c7->setData4(d4);
-				c7->getData4_1Ref()->push_back(50);
+				c7->getData4_1Ref()->push_back(1);
 				c7->setData4_4_1(true);
 				c7->setData5(false);
 

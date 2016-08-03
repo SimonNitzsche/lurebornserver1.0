@@ -30,7 +30,7 @@
 //NOTE: Components could use a special struct for their flags, having one struct that holds information about what contains data
 //		(for creation) and on that holds information about what has just updated
 bool compareComponent(const ReplicaComponent *a, const ReplicaComponent *b){
-	return a->order < b->order;
+	return a->serialization < b->serialization;
 }
 
 
@@ -40,7 +40,7 @@ Component108::Component108() {
 	flag1 = true;
 	flag2 = true;
 	flag3 = true;
-	this->order = 1;
+	this->serialization = 1;
 }
 
 Component108::~Component108() {
@@ -168,7 +168,7 @@ ControllablePhysicsComponent::ControllablePhysicsComponent(){
 	this->flag6_2 = false;
 	this->flag6_3 = false;
 	this->flag6_4 = false;
-	this->order = 3;
+	this->serialization = 3;
 }
 
 ControllablePhysicsComponent::~ControllablePhysicsComponent(){
@@ -214,7 +214,7 @@ SimplePhysicsComponent::SimplePhysicsComponent() {
 	this->flag2 = false;
 	this->flag3 = true;
 	this->data3 = 5.0;
-	this->order = 4;
+	this->serialization = 4;
 }
 
 SimplePhysicsComponent::~SimplePhysicsComponent() {
@@ -292,7 +292,7 @@ void SimplePhysicsComponent::setRotation(COMPONENT3_ROTATION rotation){ this->ro
 
 RigidBodyPhantomPhysicsComponent::RigidBodyPhantomPhysicsComponent() {
 	flag1 = true;
-	this->order = 5;
+	this->serialization = 5;
 }
 
 RigidBodyPhantomPhysicsComponent::~RigidBodyPhantomPhysicsComponent() {
@@ -327,7 +327,7 @@ void RigidBodyPhantomPhysicsComponent::setRot(COMPONENT20_ROTATION rot){ this->r
 #pragma region VehiclePhysicsComponent (Component 30)
 
 VehiclePhysicsComponent::VehiclePhysicsComponent() {
-	this->order = 6;
+	this->serialization = 6;
 }
 
 VehiclePhysicsComponent::~VehiclePhysicsComponent() {
@@ -371,7 +371,7 @@ PhantomPhysicsComponent::PhantomPhysicsComponent() {
 }
 
 PhantomPhysicsComponent::~PhantomPhysicsComponent() {
-	this->order = 7;
+	this->serialization = 7;
 }
 
 void PhantomPhysicsComponent::writeToPacket(RakNet::BitStream *packet, REPLICA_PACKET_TYPE packetType) {
@@ -598,7 +598,7 @@ DestructibleComponent::DestructibleComponent(){
 	this->flag4_4_2 = false;
 	this->trigger = true;
 	this->flag5 = true;
-	this->order = 8;
+	this->serialization = 8;
 }
 
 DestructibleComponent::~DestructibleComponent(){
@@ -630,7 +630,7 @@ void DestructibleComponent::setData5(bool data5){ this->data5 = data5; this->fla
 #pragma region SwitchComponent (Component 49)
 
 SwitchComponent::SwitchComponent() {
-	this->order = 16;
+	this->serialization = 16;
 }
 
 SwitchComponent::~SwitchComponent() {
@@ -657,7 +657,7 @@ PetComponent::PetComponent() {
 	this->flag3 = false;
 	this->flag4 = false;
 	this->flag5 = true;
-	this->order = 9;
+	this->serialization = 9;
 }
 
 PetComponent::~PetComponent() {
@@ -736,7 +736,7 @@ CharacterComponent::CharacterComponent(){
 	this->flag9 = false;
 	this->flag10 = false;
 	this->flag11 = false;
-	this->order = 10;
+	this->serialization = 10;
 }
 
 CharacterComponent::~CharacterComponent(){
@@ -853,7 +853,7 @@ COMPONENT4_DATA11 CharacterComponent::getData11(){ return data11; }
 #pragma region InventoryComponent (Component 17)
 
 InventoryComponent::InventoryComponent(){
-	this->order = 11;
+	this->serialization = 11;
 }
 InventoryComponent::~InventoryComponent(){
 
@@ -966,7 +966,7 @@ void InventoryComponent::unregisterItems() {
 
 ScriptComponent::ScriptComponent() {
 	this->flag1 = false;
-	this->order = 12;
+	this->serialization = 12;
 }
 
 ScriptComponent::~ScriptComponent() {
@@ -987,7 +987,7 @@ void ScriptComponent::setFlag1(bool flag1){ this->flag1 = flag1; }
 #pragma region SkillComponent (Component 9)
 
 SkillComponent::SkillComponent(){
-	this->order = 13;
+	this->serialization = 13;
 }
 
 SkillComponent::~SkillComponent(){
@@ -1006,7 +1006,7 @@ unsigned int SkillComponent::getComponentID(){ return 9; }
 
 BaseCombatAIComponent::BaseCombatAIComponent() {
 	flag1 = true;
-	this->order = 14;
+	this->serialization = 14;
 }
 
 BaseCombatAIComponent::~BaseCombatAIComponent() {
@@ -1041,7 +1041,7 @@ VendorComponent::VendorComponent() {
 	this->flag1 = true;
 	this->flag1_1 = true;
 	this->flag1_2 = false;
-	this->order = 17;
+	this->serialization = 17;
 }
 
 VendorComponent::~VendorComponent() {
@@ -1074,7 +1074,7 @@ void VendorComponent::setFlag1_2(bool flag1_2){ this->flag1_2 = flag1_2; }
 
 BouncerComponent::BouncerComponent() {
 	flag1 = true;
-	this->order = 18;
+	this->serialization = 18;
 }
 
 BouncerComponent::~BouncerComponent() {
@@ -1104,7 +1104,7 @@ ScriptedActivityComponent::ScriptedActivityComponent() {
 	flag1 = true;
 	data1 = 0;
 	data2 = 0;
-	this->order = 19;
+	this->serialization = 19;
 }
 
 ScriptedActivityComponent::~ScriptedActivityComponent() {
@@ -1166,7 +1166,7 @@ void ScriptedActivityComponent::setData2_10(float data2_10){ this->data2_10 = da
 RacingControlComponent::RacingControlComponent() {
 	flag1 = true;
 	shortData = 0; // Just a placeholder for now
-	this->order = 20;
+	this->serialization = 20;
 }
 
 RacingControlComponent::~RacingControlComponent() {
@@ -1248,7 +1248,7 @@ void RacingControlComponent::setData4(COMPONENT71_DATA4 data4){ this->flag5 = tr
 #pragma region RenderComponent (Component 2)
 
 RenderComponent::RenderComponent(){
-	this->order = 21;
+	this->serialization = 21;
 }
 
 RenderComponent::~RenderComponent(){
@@ -1256,8 +1256,9 @@ RenderComponent::~RenderComponent(){
 }
 
 void RenderComponent::writeToPacket(RakNet::BitStream *packet, REPLICA_PACKET_TYPE packetType){
-	//if (packetType == REPLICA_CONSTRUCTION_PACKET) packet->Write(0UL);
-	packet->Write((unsigned long)0);
+	if (packetType == REPLICA_CONSTRUCTION_PACKET) {
+		packet->Write((unsigned long)0);
+	}
 }
 
 unsigned int RenderComponent::getComponentID(){ return 2; }
