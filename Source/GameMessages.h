@@ -297,6 +297,9 @@ enum GameMessage : long {
 	CLIENT_CANCEL_MOVE_SKILL = 0x06d3,
 	DISMOUNT_COMPLETE = 0x06dc,
 	MARK_INVENTORY_AS_ACTIVE = 0x06e7,
+
+	// Unknown
+	LEVEL_UP = 1734,
 };
 
 struct ObjectInformation{
@@ -340,6 +343,7 @@ public:
 	static void unsmash(long long charid);
 	static void setJetPackMode(long long charid, bool bypassChecks, bool doHover, bool use);
 	static void displayZoneSummary(long long charid, bool isProperty, bool isZoneStart);
+	static void sendLevelUpMessage(long long charid);
 	
 	//jonny made this, dont know what this is. Not documented
 	static void castActiveSkill(long long charid, unsigned long someNumber);

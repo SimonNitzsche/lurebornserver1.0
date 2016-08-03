@@ -35,6 +35,7 @@
 #include "PlayerObject.h"
 #include "NPCObject.h"
 #include "SmashableObject.h"
+#include "GenericObject.h"
 #include "Replica.h"
 #include "ReplicaComponents.h"
 #include "LootObject.h"
@@ -218,15 +219,7 @@ void WorldLoop(CONNECT_INFO* cfg) {
 					12446
 				};
 				int choice = (1 + (rand() % (int)(RandomRocketBoxTypeLOTList.size() - 1 + 1))) - 1;
-				SmashableObject * smashable = new SmashableObject(RandomRocketBoxTypeLOTList.at(choice), 1000);
-
-				SimplePhysicsComponent *c3 = smashable->getSimplePhysicsComponent();
-
-				COMPONENT3_POSITION Cpos = COMPONENT3_POSITION(x, y, z);
-				COMPONENT3_ROTATION Crot = COMPONENT3_ROTATION(rX, rY, rZ, rotW);
-
-				c3->setPosition(Cpos);
-				c3->setRotation(Crot);
+				GenericObject * smashable = new GenericObject(RandomRocketBoxTypeLOTList.at(choice), 1000, COMPONENT1_POSITION(x, y, z), COMPONENT1_ROTATION(rX, rY, rZ, rotW), COMPONENT1_VELOCITY(), COMPONENT1_VELOCITY_ANGULAR());
 
 				ObjectsManager::registerObject(smashable);
 				//ObjectsManager::registerSmashable(smashable);
@@ -1579,7 +1572,7 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 				d4.maxArmorN = 0.0f;
 
 				c7->setData4(d4);
-				c7->getData4_1Ref()->push_back(50);
+				c7->getData4_1Ref()->push_back(1);
 				c7->setData4_4_1(true);
 				c7->setData5(false);
 

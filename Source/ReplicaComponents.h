@@ -10,7 +10,13 @@ class ReplicaComponent{
 public:
 	virtual void writeToPacket(RakNet::BitStream *packet, REPLICA_PACKET_TYPE packetType) = 0;
 	virtual unsigned int getComponentID() = 0;
+	bool operator<(const ReplicaComponent &r) const {
+		return this->serialization < r.serialization;
+	}
+	int serialization = 0;
 };
+
+bool compareComponent(const ReplicaComponent *a, const ReplicaComponent *b);
 
 #pragma region Componet108 (Name Unknown)
 
@@ -22,6 +28,7 @@ private:
 	bool flag3;
 	long data3_1;
 	bool data4;
+	int serialization;
 public:
 	Component108();
 	~Component108();
@@ -602,7 +609,6 @@ public:
 class SwitchComponent : public ReplicaComponent {
 private:
 	bool switchState = false;
-
 public:
 	SwitchComponent();
 	~SwitchComponent();
@@ -632,7 +638,6 @@ private:
 	short data5_1_1;
 	char length2;
 	short data5_1_2;
-
 public:
 	PetComponent();
 	~PetComponent();
@@ -819,6 +824,7 @@ public:
 #pragma region SkillComponent (Component 9)
 
 class SkillComponent : public ReplicaComponent{
+private:
 public:
 	SkillComponent();
 	~SkillComponent();
