@@ -538,9 +538,19 @@ void GameMSG::resurrect(long long charid, bool immediate)
 		bs->Write((bool)immediate);
 		WorldServer::sendPacket(bs, s.addr);
 		
-		/*PlayerObject *player = (PlayerObject*) ObjectsManager::getObjectByID(s.activeCharId);
+		PlayerObject *player = (PlayerObject*) ObjectsManager::getObjectByID(s.activeCharId);
 		ObjectsManager::clientJoinWorld(player, s.addr);
-		Session::enter(s.activeCharId, s.zone);*/
+		Session::enter(s.activeCharId, s.zone);
+
+		bs = WorldServerPackets::InitGameMessage(s.activeCharId, REBUILD_NOTIFY_STATE);
+		bs->Write(PHASE_INWORLD);
+		bs->Write(t->phase);
+		bs->Write(s.activeCharId);
+
+		std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
+		for (unsigned int k = 0; k < sessionsz.size(); k++) {
+			WorldServer::sendPacket(bs, sessionsz.at(k).addr);
+		}
 	}
 }
 
@@ -686,6 +696,32 @@ void GameMSG::castActiveSkill(long long charid, unsigned long someNumber) {
 	}
 }
 
+void GameMSG::verifyAck(SystemAddress &systemAddress, std::string sBitStream, unsigned long uiHandle, bool bDifferent) {
+	
+	RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(SessionsTable::getClientSession(systemAddress).activeCharId, GameMessage::VERIFY_ACK);
+	bs->Write(bDifferent);
+	bs->Write(sBitStream);
+	bs->Write(uiHandle);
+
+	WorldServer::sendPacket(bs, systemAddress);
+}
+
+void GameMSG::EchoSyncSkill(SystemAddress &systemAddress, std::string sBitStream, unsigned long uiBehaviorHandle, unsigned long uiSkillHandle, bool bDone) {
+	long long charId = SessionsTable::getClientSession(systemAddress).activeCharId;
+	SessionInfo s = SessionsTable::getClientSession(SessionsTable::findCharacter(charId));
+	RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(charId, GameMessage::VERIFY_ACK);
+	bs->Write(sBitStream);
+	bs->Write(uiBehaviorHandle);
+	bs->Write(uiSkillHandle);
+	bs->Write(bDone);
+
+	std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
+	for (unsigned int k = 0; k < sessionsz.size(); k++) {
+		WorldServer::sendPacket(bs, systemAddress);
+	}
+
+}
+
 /*TO PARSE ALL GAME MESSAGES*/
 void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, SystemAddress &systemAddress) {
 
@@ -710,9 +746,56 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 		case START_SKILL: {
 
 			//read packet
+			bool bUsedMouse;
+			data->Read(bUsedMouse);
+			unsigned long long consumableItemID;
+			data->Read(consumableItemID);
+			float fCasterLatency;
+			data->Read(fCasterLatency);
+			int iCastType;
+			data->Read(iCastType);
+			float x;
+			data->Read(x);
+			float y;
+			data->Read(y);
+			float z;
+			data->Read(z);
+			unsigned long long optionalOriginatorID;
+			data->Read(optionalOriginatorID);
+			unsigned long long optionalTargetID;
+			data->Read(optionalTargetID);
+			float ox;
+			data->Read(ox);
+			float oy;
+			data->Read(oy);
+			float oz;
+			data->Read(oz);
+			std::string sBitStream;
+			data->Read(sBitStream);
+			unsigned long skillID;
+			data->Read(skillID);
+			unsigned long uiSkillHandle;
+			data->Read(uiSkillHandle);
 
 			//response
-
+			bool doLog = false; //Prevent spam
+			if (doLog) {
+				Logger::log("GM", "COMBT", std::to_string(bUsedMouse));
+				Logger::log("GM", "COMBT", std::to_string(consumableItemID));
+				Logger::log("GM", "COMBT", std::to_string(fCasterLatency));
+				Logger::log("GM", "COMBT", std::to_string(iCastType));
+				Logger::log("GM", "COMBT", std::to_string(x));
+				Logger::log("GM", "COMBT", std::to_string(y));
+				Logger::log("GM", "COMBT", std::to_string(z));
+				Logger::log("GM", "COMBT", std::to_string(optionalOriginatorID));
+				Logger::log("GM", "COMBT", std::to_string(optionalTargetID));
+				Logger::log("GM", "COMBT", std::to_string(ox));
+				Logger::log("GM", "COMBT", std::to_string(oy));
+				Logger::log("GM", "COMBT", std::to_string(oz));
+				Logger::log("GM", "COMBT", sBitStream);
+				Logger::log("GM", "COMBT", std::to_string(skillID));
+				Logger::log("GM", "COMBT", std::to_string(uiSkillHandle));
+			}
 		} break;
 		case SELECT_SKILL: {
 
@@ -917,6 +1000,7 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 
 		} break;
 		case SYNC_SKILL: {
+			//read packet
 			bool flag;
 			data->Read(flag);
 			unsigned long d1;
@@ -928,6 +1012,10 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 			unsigned long num2;
 			data->Read(num2);
 			Logger::log("WRLD", "COMBAT", std::to_string(num1) + "|" + std::to_string(num2));
+
+			//response
+			GameMSG::EchoSyncSkill(systemAddress, std::to_string(d1), num1, num2, flag);
+			GameMSG::verifyAck(systemAddress, std::to_string(d1), num1, false);
 
 		} break;
 		case USED_INFORMATION_PLAQUE: {

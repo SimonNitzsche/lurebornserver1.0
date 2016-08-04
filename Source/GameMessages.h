@@ -347,6 +347,10 @@ public:
 	
 	//jonny made this, dont know what this is. Not documented
 	static void castActiveSkill(long long charid, unsigned long someNumber);
+
+	static void verifyAck(SystemAddress & systemAddress, std::string sBitStream, unsigned long uiHandle, bool bDifferent);
+
+	static void EchoSyncSkill(SystemAddress & systemAddress, std::string sBitStream, unsigned long uiBehaviorHandle, unsigned long uiSkillHandle, bool bDone);
 	
 	//parses the game messages
 	static void parseGameMSG(unsigned short messageID, RakNet::BitStream *data, SystemAddress &systemAddress);

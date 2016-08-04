@@ -231,66 +231,67 @@ void WorldLoop(CONNECT_INFO* cfg) {
 
 	
 	// This will be used in the saving of packets below...
-	while (LUNI_WRLD) {
-		while (_kbhit()){
-			unsigned char key = (unsigned  char) _getch();
-			switch (key){
-			case 8:
-				//Backspace
-				if (buffer.size() > 0){
-					buffer.pop_back();
-					std::cout << "\b";
-					std::cout << " ";
-					std::cout << "\b";
-				}
-				break;
-			case 13:
-			{
-				//Enter
-				std::string str(buffer.begin(), buffer.end());
-				buffer.clear();
-				//std::cout << "String: " << str << std::endl;
-
-				if (str != ""){
-					std::cout << std::endl;
-					if (str == "quit"){
-						LUNI_WRLD = false;
+	try {
+		while (LUNI_WRLD) {
+			while (_kbhit()) {
+				unsigned char key = (unsigned  char)_getch();
+				switch (key) {
+				case 8:
+					//Backspace
+					if (buffer.size() > 0) {
+						buffer.pop_back();
+						std::cout << "\b";
+						std::cout << " ";
+						std::cout << "\b";
 					}
-					else{
-						std::cout << "Command '" << str << "' not found!" << std::endl;
+					break;
+				case 13:
+				{
+					//Enter
+					std::string str(buffer.begin(), buffer.end());
+					buffer.clear();
+					//std::cout << "String: " << str << std::endl;
+
+					if (str != "") {
+						std::cout << std::endl;
+						if (str == "quit") {
+							LUNI_WRLD = false;
+						}
+						else {
+							std::cout << "Command '" << str << "' not found!" << std::endl;
+						}
+					}
+
+					buffer_started = false;
+					Logger::unmute();
+				}
+				break;
+				case 27:
+					//ESC
+					break;
+				default:
+					if (!buffer_started) {
+						std::cout << "> ";
+						buffer_started = true;
+						Logger::mute();
+					}
+
+					//Whitelist for chars
+					if ((48 <= key && key <= 57) || (97 <= key && key <= 122) || (65 <= key && key <= 90) || key == 32) {
+						buffer.push_back(key);
+						std::cout << key;
 					}
 				}
-
-				buffer_started = false;
-				Logger::unmute();
+				//ESC - 27
+				//ENTER - 13
+				//48 - 57 0-9
+				//97 - 122 a-z
+				//65 - 90 A-Z
 			}
-				break;
-			case 27:
-				//ESC
-				break;
-			default:
-				if (!buffer_started){
-					std::cout << "> ";
-					buffer_started = true;
-					Logger::mute();
-				}
 
-				//Whitelist for chars
-				if ((48 <= key && key <= 57) || (97 <= key && key <= 122) || (65 <= key && key <= 90) || key == 32){
-					buffer.push_back(key);
-					std::cout << key;
-				}
-			}
-			//ESC - 27
-			//ENTER - 13
-			//48 - 57 0-9
-			//97 - 122 a-z
-			//65 - 90 A-Z
-		}
-
-		RakSleep(30);	// This sleep keeps RakNet responsive
-		packet = rakServer->Receive(); // Recieve the packets from the server
-		if (packet == NULL) continue; // If packet is NULL, just continue without processing anything
+			RakSleep(30);	// This sleep keeps RakNet responsive
+			packet = rakServer->Receive(); // Recieve the packets from the server
+			if (packet == NULL) continue; // If packet is NULL, just continue without processing anything
 
 
 
@@ -300,8 +301,8 @@ void WorldLoop(CONNECT_INFO* cfg) {
 
 
 
-		// This will save all packets recieved from the client if running from DEBUG
-		#ifdef DEBUG
+										  // This will save all packets recieved from the client if running from DEBUG
+#ifdef DEBUG
 			stringstream packetName;
 			packetName << ".//Saves//World_Packet" << i << ".bin";
 
@@ -309,30 +310,30 @@ void WorldLoop(CONNECT_INFO* cfg) {
 				SavePacket(packetName.str(), (char*)packet->data, packet->length);
 				i++;
 			}
-		#endif
+#endif
 
-		RakNet::BitStream *pdata = new RakNet::BitStream(packet->data, packet->length, false);
-		unsigned char packetId;
-		pdata->Read(packetId);
+			RakNet::BitStream *pdata = new RakNet::BitStream(packet->data, packet->length, false);
+			unsigned char packetId;
+			pdata->Read(packetId);
 
-		// Create and send packets back here according to the one we got
-		switch (packetId) {
+			// Create and send packets back here according to the one we got
+			switch (packetId) {
 			case ID_USER_PACKET_ENUM:
 			{
 				//This is a normal packet, that should be parsed and responded to accordingly.
 				SessionInfo session = SessionsTable::getClientSession(packet->systemAddress);
-				if (session.phase > SessionPhase::PHASE_NONE){
+				if (session.phase > SessionPhase::PHASE_NONE) {
 					parsePacket(rakServer, packet->systemAddress, pdata, (unsigned long)(packet->length - 1));
 				}
-				else{
+				else {
 					Logger::log("WRLD", "CLIENT", "Recieved packet from unconnected user " + std::string(packet->systemAddress.ToString()));
 				}
-			}				
-				break;
+			}
+			break;
 			case ID_NEW_INCOMING_CONNECTION:
-			#ifdef DEBUG
+#ifdef DEBUG
 				Logger::log("WRLD", "CLIENT", "Receiving a new connection...");
-			#endif
+#endif
 				break;
 
 			case ID_DISCONNECTION_NOTIFICATION:
@@ -348,14 +349,14 @@ void WorldLoop(CONNECT_INFO* cfg) {
 				//usr->DestructPlayer();
 				Session::disconnect(packet->systemAddress, SessionPhase::PHASE_INWORLD);
 			}
-				break;
+			break;
 			case DefaultMessageIDTypes::ID_CONNECTION_LOST:
 			{
 				SessionInfo session = SessionsTable::getClientSession(packet->systemAddress);
 				Logger::log("WRLD", "", "Lost connection to " + std::string(packet->systemAddress.ToString()), LOG_ERROR);
-				if (session.phase >= SessionPhase::PHASE_AUTHENTIFIED){
+				if (session.phase >= SessionPhase::PHASE_AUTHENTIFIED) {
 					//auto usr = OnlineUsers->Find(packet->systemAddress);
-					if (session.phase >= SessionPhase::PHASE_PLAYING){
+					if (session.phase >= SessionPhase::PHASE_PLAYING) {
 						Friends::broadcastFriendLogout(session.activeCharId);
 						ObjectsManager::clientLeaveWorld(session.activeCharId, packet->systemAddress);
 						//usr->DestructPlayer();
@@ -364,13 +365,17 @@ void WorldLoop(CONNECT_INFO* cfg) {
 				}
 				Session::disconnect(packet->systemAddress, SessionPhase::PHASE_INWORLD);
 			}
-				break;
+			break;
 			default:
 				stringstream s;
 				Logger::log("WRLD", "", "recieved unknown packet [" + std::to_string(packetId) + "]", LOG_DEBUG);
 				Logger::log("WRLD", "", RawDataToString(packet->data, packet->length), LOG_DEBUG);
+			}
+			rakServer->DeallocatePacket(packet);
 		}
-		rakServer->DeallocatePacket(packet);
+	}
+	catch (Exception e) {
+		Logger::log("WRLD", "THREAD", "Prevented server to crash");
 	}
 
 	int instanceid = InstancesTable::getInstanceId(ServerAddress);

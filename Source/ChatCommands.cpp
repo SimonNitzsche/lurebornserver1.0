@@ -906,7 +906,8 @@ std::wstring AnnouncementCommandHandler::getSyntax(){
 
 void AdminCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params){
 	ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(s->activeCharId);
-	if (cinfo.info.gmlevel > 0)
+	int accRank = AccountsTable::getRank(cinfo.info.accountid);
+	if (cinfo.info.gmlevel > 0 || accRank > 0)
 	{
 		if (params->size() == 1){
 			ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(s->activeCharId);
