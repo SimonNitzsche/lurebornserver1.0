@@ -16,7 +16,20 @@
 
 PlayerObject::PlayerObject(long long objid, std::wstring name){
 	this->objid = objid;
-	this->name = name;
+	int rank = CharactersTable::getCharacterInfo(objid).info.gmlevel;
+
+	if (rank == 1) {
+		this->name = name.append(L" - Moderator");
+	}else {
+		if (rank == 2) {
+			this->name = name.append(L" - Administrator");
+		}
+		else {
+			this->name = name;
+		}
+	}
+	
+	
 	this->LOT = 1UL;
 
 	//The order is VERY IMPORTANT for the packet: 1,7,4,17,9,2,107
