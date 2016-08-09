@@ -235,6 +235,9 @@ int main(int argc, char* argv[]) {
 	}
 	#endif
 
+	//Clear sessions on exit
+	std::atexit(SessionsTable::ClearSessions);
+
 	// Start the two new threads (Auth and World servers)
 	if (Role == ROLE_AUTH){
 		CONNECT_INFO auth;

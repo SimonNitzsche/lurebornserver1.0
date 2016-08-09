@@ -332,7 +332,7 @@ public:
 	static void teleport(long long charid, COMPONENT1_POSITION position);
 	static void dropClientLoot(long long charid, COMPONENT1_POSITION position, long currency, unsigned long LOT, long long objid, long long ownerid, long long sourceid, COMPONENT1_POSITION finalPosition);
 	static void die(long long charid, bool clientDeath, bool spawnLoot, float coinSpawnTime, std::wstring deathType, float forceXZ, float forceY, float force, long long killerid, long long lootOwnerID);
-	static void playAnimation(long long charid, std::wstring animationID, bool playImmediate = true);
+	static void playAnimation(long long charid, std::wstring animationID, bool playImmediate = true, bool ignoreSubject = false);
 	static void setName(long long charid, std::wstring name);
 	static void addSkill(long long charid, unsigned long skillid, unsigned long slot);
 	static void removeSkill(long long charid, unsigned long skillid);

@@ -353,7 +353,7 @@ void Chat::sendChatMessage(SystemAddress addr, std::wstring message, std::wstrin
 	unsigned long long u64 = 0;
 
 	aw->Write(u64);
-	aw->Write((unsigned char)0x03); //chat channel (for future reference. Has to do with speech bubbles)
+	aw->Write((unsigned char)0x03); //chat channel (for future reference. Has to do with speech bubbles)  DEFAULT: 0x03
 	int len = message.size();
 	aw->Write((unsigned char)(len + 1));
 	aw->Write(u16);
@@ -377,10 +377,10 @@ void Chat::sendChatMessage(SystemAddress addr, std::wstring message, std::wstrin
 	for (unsigned int k = 0; k < message.size(); k++){
 		aw->Write(message.at(k));
 	}
-	aw->Write(u16);
+	aw->Write(u16); //u16
 	if (displayChatBubble) {
-		RakNet::BitStream *cb = WorldServerPackets::InitGameMessage(SessionsTable::getClientSession(addr).activeCharId, GameMessage::DISPLAY_CHAT_BUBBLE);
-		WorldServer::sendPacket(cb, addr);
+		//RakNet::BitStream *cb = WorldServerPackets::InitGameMessage(SessionsTable::getClientSession(addr).activeCharId, GameMessage::DISPLAY_CHAT_BUBBLE);
+		//WorldServer::sendPacket(cb, addr);
 	}
 	WorldServer::sendPacket(aw, addr);
 }

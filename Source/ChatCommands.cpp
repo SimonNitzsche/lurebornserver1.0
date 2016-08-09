@@ -21,6 +21,7 @@
 #include "ObjectID.h"
 #include "CharactersDB.h"
 #include "GenericObject.h"
+#include "CDClientDB.h"
 
 // SQLite
 #include "SQLiteDatabase.h"
@@ -312,7 +313,7 @@ void TestmapCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstri
 			Logger::log("WRLD", "CHAT", "Requesting teleport to " + std::to_string(argumentValue));
 			bool f = false;
 			if (getWorldTarget(zone).size() > 0){
-				if (zone != ZoneId::NO_ZONE && zone != ZoneId::KEELHAUL_CANYON){
+				if (zone != ZoneId::NO_ZONE && zone != ZoneId::KEELHAUL_CANYON && zone !=ZoneId::AVANT_GARDENS_SURVIVAL){
 					COMPONENT1_POSITION pos = getZoneSpawnPoint(zone, static_cast<ZoneId>(s->zone));
 					f = Worlds::loadWorld(s->addr, zone, pos, 0, 0);
 					if (f){
@@ -458,6 +459,9 @@ std::wstring ItemsCommandHandler::getSyntax(){
 }
 
 void AddItemCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params){
+	Chat::sendChatMessage(s->addr, L"This command use outdated code and needs to be redone!");
+	return;
+
 	if (params->size() == 1)
 	{
 		std::string checkLOT = UtfConverter::ToUtf8(params->at(0));
@@ -473,7 +477,7 @@ void AddItemCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstri
 		}
 		if (flag){
 			long lot = std::stoi(params->at(0));
-			unsigned long amount = std::stoi(params->at(1));
+			unsigned long amount = std::stoi(checkAmount);
 
 			unsigned long slot = -1;
 			for (int i = 0; (slot == -1) && (i != 24); i++){
@@ -493,21 +497,21 @@ void AddItemCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstri
 				ef->Write((bool)false);
 				ef->Write((bool)false);
 				ef->Write((bool)false);
-				ef->Write((bool)false);
+				ef->Write((int)0); //bool, false
 				ef->Write((unsigned long)0);
 				ef->Write(stol(checkLOT));
-				ef->Write((bool)false);
-				ef->Write((bool)false);
-				ef->Write((bool)true);
-				ef->Write((unsigned long)stol(checkAmount));
-				ef->Write((bool)true);
+				ef->Write((long long)0); //bool false
+				ef->Write((int)0); //bool false
+				//ef->Write((bool)true);
+				ef->Write((unsigned long)amount);
+				//ef->Write((bool)true);
 				ef->Write((unsigned long)0);
-				ef->Write(objid);
+				ef->Write((long long)objid);
 				ef->Write((float)0);
 				ef->Write((float)0);
 				ef->Write((float)0);
 				ef->Write((bool)true);
-				ef->Write((unsigned long)slot);
+				ef->Write((int)slot); //unsigned long
 
 
 
@@ -1378,7 +1382,15 @@ std::wstring DropCommandHandler::getSyntax() {
 
 void PlayAnimationCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
 	if (params->size() > 0) {
-		GameMSG::playAnimation(s->activeCharId, params->at(0), true);
+		std::stringstream ss;
+		ss << params->at(0).c_str();
+		if (true) {
+			Chat::sendChatMessage(s->addr, L"Playing animation \""+params->at(0)+L"\"");
+			GameMSG::playAnimation(s->activeCharId, params->at(0), true);
+		}
+		else {
+			Chat::sendChatMessage(s->addr, L"Animation not found!");
+		}
 	}
 	else {
 		Chat::sendChatMessage(s->addr, L"Syntax: anim <animID>");

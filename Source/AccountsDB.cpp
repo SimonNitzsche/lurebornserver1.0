@@ -583,10 +583,14 @@ SessionInfo SessionsTable::leave(long long charid){
 	}
 }
 
+void SessionsTable::ClearSessions() {
+	std::string qcs = "TRUNCATE sessions";
+	auto qr = Database::Query(qcs);
+}
+
 unsigned int SessionsTable::count(){
-	std::stringstream str;
-	str << "SELECT `ipaddress` FROM `sessions`";
-	auto qr = Database::Query(str.str());
+	std::string str = "SELECT `ipaddress` FROM `sessions`";
+	auto qr = Database::Query(str);
 	if (qr == NULL){
 		Logger::logError("ACDB", "MYSQL", "counting sessions", mysql_error(Database::getConnection()));
 		return 0;

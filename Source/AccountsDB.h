@@ -114,6 +114,9 @@ public:
 	static SessionInfo enter(long long charid, unsigned short zoneId);
 	static SessionInfo leave(long long charid);
 
+	//Database
+	static void ClearSessions();
+
 	static unsigned int count();
 
 	std::string getName();

@@ -22,10 +22,14 @@ PlayerObject::PlayerObject(long long objid, std::wstring name){
 		this->name = name.append(L" - Moderator");
 	}else {
 		if (rank == 2) {
-			this->name = name.append(L" - Administrator");
+			this->name = name.append(L" - Developer");
 		}
 		else {
-			this->name = name;
+			if (rank == 3) {
+				this->name = name.append(L" - Owner");
+			}else {
+				this->name = name;
+			}
 		}
 	}
 	

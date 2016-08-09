@@ -449,10 +449,16 @@ void GameMSG::die(long long charid, bool clientDeath, bool spawnLoot, float coin
 	bs->Write((bool)false);
 	bs->Write((unsigned long long) killerid);
 	bs->Write((unsigned long long) charid);
-	WorldServer::sendPacket(bs, s.addr);
+
+	std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
+	for (unsigned int k = 0; k < sessionsz.size(); k++) {
+		WorldServer::sendPacket(bs, sessionsz.at(k).addr);
+	}
+
+	//GameMSG::playAnimation(charid, L"death", true, true);
 }
 
-void GameMSG::playAnimation(long long charid, std::wstring animationID, bool playImmediate) {
+void GameMSG::playAnimation(long long charid, std::wstring animationID, bool playImmediate, bool ignoreSubject) {
 	SessionInfo s = SessionsTable::getClientSession(SessionsTable::findCharacter(charid));
 
 	RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(charid, PLAY_ANIMATION);
@@ -469,7 +475,12 @@ void GameMSG::playAnimation(long long charid, std::wstring animationID, bool pla
 
 	std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
 	for (unsigned int k = 0; k < sessionsz.size(); k++){
-		WorldServer::sendPacket(bs, sessionsz.at(k).addr);
+		bool canSend = true;
+		if (ignoreSubject)
+			if (sessionsz.at(k).activeCharId == charid)
+				canSend = false;
+		if(canSend)
+			WorldServer::sendPacket(bs, sessionsz.at(k).addr);
 	}
 }
 
@@ -536,7 +547,10 @@ void GameMSG::resurrect(long long charid, bool immediate)
 
 		RakNet::BitStream * bs = WorldServerPackets::InitGameMessage(s.activeCharId, RESURRECT);
 		bs->Write((bool)immediate);
-		WorldServer::sendPacket(bs, s.addr);
+		std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
+		for (unsigned int k = 0; k < sessionsz.size(); k++) {
+			WorldServer::sendPacket(bs, sessionsz.at(k).addr);
+		}
 		
 		PlayerObject *player = (PlayerObject*) ObjectsManager::getObjectByID(s.activeCharId);
 		ObjectsManager::clientJoinWorld(player, s.addr);
@@ -547,7 +561,6 @@ void GameMSG::resurrect(long long charid, bool immediate)
 		bs->Write(t->phase);
 		bs->Write(s.activeCharId);
 
-		std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
 		for (unsigned int k = 0; k < sessionsz.size(); k++) {
 			WorldServer::sendPacket(bs, sessionsz.at(k).addr);
 		}
@@ -692,7 +705,9 @@ void GameMSG::castActiveSkill(long long charid, unsigned long someNumber) {
 
 	std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
 	for (unsigned int k = 0; k < sessionsz.size(); k++){
-		WorldServer::sendPacket(bs, sessionsz.at(k).addr);
+		if (!(sessionsz.at(k).activeCharId == charid)) {
+			WorldServer::sendPacket(bs, sessionsz.at(k).addr);
+		}
 	}
 }
 
@@ -953,6 +968,11 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 				if (script == L"achieve") {
 					die(s.activeCharId, true, true, 0.0F, L"WorldDeathWater", 0.0F, 0.0F, 0.0F, s.activeCharId, s.activeCharId);
 				}
+				else {
+					std::stringstream ss;
+					ss << script.c_str();
+					Logger::log("GM", "PCKT", "New Fire Event Server Side: " + ss.str());
+				}
 			}
 
 		} break;
@@ -1014,8 +1034,20 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 			Logger::log("WRLD", "COMBAT", std::to_string(num1) + "|" + std::to_string(num2));
 
 			//response
-			GameMSG::EchoSyncSkill(systemAddress, std::to_string(d1), num1, num2, flag);
-			GameMSG::verifyAck(systemAddress, std::to_string(d1), num1, false);
+			RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(SessionsTable::getClientSession(systemAddress).activeCharId, 0x0020);
+			bs->Write(false);
+			bs->Write(false);
+			bs->Write(false);
+			bs->Write(false);
+
+			std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
+			for (unsigned int k = 0; k < sessionsz.size(); k++) {
+				WorldServer::sendPacket(bs, systemAddress);
+			}
+			//GameMSG::castActiveSkill(SessionsTable::getClientSession(systemAddress).activeCharId, num1);
+			//GameMSG::castActiveSkill(SessionsTable::getClientSession(systemAddress).activeCharId, num2);
+			//GameMSG::EchoSyncSkill(systemAddress, std::to_string(d1), num1, num2, flag);
+			//GameMSG::verifyAck(systemAddress, std::to_string(d1), num1, false);
 
 		} break;
 		case USED_INFORMATION_PLAQUE: {

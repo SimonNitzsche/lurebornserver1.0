@@ -14,6 +14,7 @@
 #include "InventoryDB.h"
 #include "ServerDB.h"
 #include "CDClientDB.h"
+#include "LiveUpdateDB.h"
 
 // - Mechanics -
 #include "Account.h"
@@ -22,6 +23,7 @@
 #include "Social.h"
 #include "Worlds.h"
 #include "GameMessages.h"
+#include "WebAPIService.h"
 
 // - Network -
 #include "CharPackets.h"
@@ -48,8 +50,10 @@
 #include "RakNet\PacketFileLogger.h"
 #include "RakNet\BitStream.h"
 #include "RakNet\ReplicaManager.h"
+
 // -- zlib (unused) --
 #include "zlib.h"
+
 // -- c++ --
 #include <conio.h>
 #include <cstdlib>
@@ -57,21 +61,167 @@
 #include <iomanip>
 #include <algorithm>
 #include <chrono>
+#include <thread>
+#include <stdlib.h>
+#include <ctime>
+
+void WorldLoopThread(std::vector<unsigned char> buffer, bool LUNI_WRLD, bool buffer_started, int i) {
+	while (_kbhit()) {
+		unsigned char key = (unsigned  char)_getch();
+		switch (key) {
+		case 8:
+			//Backspace
+			if (buffer.size() > 0) {
+				buffer.pop_back();
+				std::cout << "\b";
+				std::cout << " ";
+				std::cout << "\b";
+			}
+			break;
+		case 13:
+		{
+			//Enter
+			std::string str(buffer.begin(), buffer.end());
+			buffer.clear();
+			//std::cout << "String: " << str << std::endl;
+
+			if (str != "") {
+				std::cout << std::endl;
+				if (str == "quit") {
+					LUNI_WRLD = false;
+				}
+				else {
+					std::cout << "Command '" << str << "' not found!" << std::endl;
+				}
+			}
+
+			buffer_started = false;
+			Logger::unmute();
+		}
+		break;
+		case 27:
+			//ESC
+			break;
+		default:
+			if (!buffer_started) {
+				std::cout << "> ";
+				buffer_started = true;
+				Logger::mute();
+			}
+
+			//Whitelist for chars
+			if ((48 <= key && key <= 57) || (97 <= key && key <= 122) || (65 <= key && key <= 90) || key == 32) {
+				buffer.push_back(key);
+				std::cout << key;
+			}
+		}
+		//ESC - 27
+		//ENTER - 13
+		//48 - 57 0-9
+		//97 - 122 a-z
+		//65 - 90 A-Z
+	}
+
+	RakSleep(30);	// This sleep keeps RakNet responsive
+	Packet * packet;
+	packet = WorldLoop::rakServer->Receive(); // Recieve the packets from the server
+	if (packet != NULL) {
 
 
+
+
+
+
+
+
+		// This will save all packets recieved from the client if running from DEBUG
+#ifdef DEBUG
+		stringstream packetName;
+		packetName << ".//Saves//World_Packet" << i << ".bin";
+
+		if (packet->data[3] != 22) {
+			SavePacket(packetName.str(), (char*)packet->data, packet->length);
+			i++;
+		}
+#endif
+
+		RakNet::BitStream *pdata = new RakNet::BitStream(packet->data, packet->length, false);
+		unsigned char packetId;
+		pdata->Read(packetId);
+
+		// Create and send packets back here according to the one we got
+		switch (packetId) {
+		case ID_USER_PACKET_ENUM:
+		{
+			//This is a normal packet, that should be parsed and responded to accordingly.
+			SessionInfo session = SessionsTable::getClientSession(packet->systemAddress);
+			if (session.phase > SessionPhase::PHASE_NONE) {
+				parsePacket(WorldLoop::rakServer, packet->systemAddress, pdata, (unsigned long)(packet->length - 1));
+			}
+			else {
+				Logger::log("WRLD", "CLIENT", "Recieved packet from unconnected user " + std::string(packet->systemAddress.ToString()));
+			}
+		}
+		break;
+		case ID_NEW_INCOMING_CONNECTION:
+#ifdef DEBUG
+			Logger::log("WRLD", "CLIENT", "Receiving a new connection...");
+#endif
+			break;
+
+		case ID_DISCONNECTION_NOTIFICATION:
+		{
+			PacketTools::printRest(pdata);
+			SessionInfo session = SessionsTable::getClientSession(packet->systemAddress);
+			std::string name = AccountsTable::getAccountName(session.accountid);
+			//auto usr = OnlineUsers->Find(packet->systemAddress);
+			//OnlineUsers->Remove(packet->systemAddress);
+			Logger::log("WRLD", "CLIENT", "Disconnected " + name);
+			Friends::broadcastFriendLogout(session.activeCharId);
+			ObjectsManager::clientLeaveWorld(session.activeCharId, packet->systemAddress);
+			//usr->DestructPlayer();
+			Session::disconnect(packet->systemAddress, SessionPhase::PHASE_INWORLD);
+		}
+		break;
+		case DefaultMessageIDTypes::ID_CONNECTION_LOST:
+		{
+			SessionInfo session = SessionsTable::getClientSession(packet->systemAddress);
+			Logger::log("WRLD", "", "Lost connection to " + std::string(packet->systemAddress.ToString()), LOG_ERROR);
+			if (session.phase >= SessionPhase::PHASE_AUTHENTIFIED) {
+				//auto usr = OnlineUsers->Find(packet->systemAddress);
+				if (session.phase >= SessionPhase::PHASE_PLAYING) {
+					Friends::broadcastFriendLogout(session.activeCharId);
+					ObjectsManager::clientLeaveWorld(session.activeCharId, packet->systemAddress);
+					//usr->DestructPlayer();
+				}
+				//OnlineUsers->Remove(packet->systemAddress);
+			}
+			Session::disconnect(packet->systemAddress, SessionPhase::PHASE_INWORLD);
+		}
+		break;
+		default:
+			stringstream s;
+			Logger::log("WRLD", "", "recieved unknown packet [" + std::to_string(packetId) + "]", LOG_DEBUG);
+			Logger::log("WRLD", "", RawDataToString(packet->data, packet->length), LOG_DEBUG);
+		}
+		WorldLoop::rakServer->DeallocatePacket(packet);
+	}
+}
+
+RakPeerInterface* WorldLoop::rakServer;
 void WorldLoop(CONNECT_INFO* cfg) {
 	// Initialize the RakPeerInterface used throughout the entire server
-	RakPeerInterface* rakServer = RakNetworkFactory::GetRakPeerInterface();
+	WorldLoop::rakServer = RakNetworkFactory::GetRakPeerInterface();
 
 	// Initialize the PacketFileLogger plugin (for the logs)
 	PacketFileLogger* msgFileHandler = NULL;
 	if (cfg->logFile) {
 		msgFileHandler = new PacketFileLogger();
-		rakServer->AttachPlugin(msgFileHandler);
+		WorldLoop::rakServer->AttachPlugin(msgFileHandler);
 	}
 
 	// Initialize security IF user has enabled it in config.ini
-	InitSecurity(rakServer, cfg->useEncryption);
+	InitSecurity(WorldLoop::rakServer, cfg->useEncryption);
 
 	// Initialize the SocketDescriptor
 	SocketDescriptor socketDescriptor(cfg->listenPort, 0);
@@ -83,13 +233,13 @@ void WorldLoop(CONNECT_INFO* cfg) {
 	// If the startup of the server is successful, print it to the console
 	// Otherwise, quit the server (as the char server is REQUIRED for the
 	// server to function properly)
-	if (rakServer->Startup(8, 30, &socketDescriptor, 1)) {
+	if (WorldLoop::rakServer->Startup(8, 30, &socketDescriptor, 1)) {
 		Logger::log("WRLD", "", "started! Listening on port " + std::to_string(cfg->listenPort));
 		Instances::registerInstance(ServerAddress);
 	} else exit(2);
 
 	// Set max incoming connections to 8
-	rakServer->SetMaximumIncomingConnections(8);
+	WorldLoop::rakServer->SetMaximumIncomingConnections(8);
 
 	// If msgFileHandler is not NULL, save logs of char server
 	if (msgFileHandler != NULL) msgFileHandler->StartLog(".\\logs\\world");
@@ -103,8 +253,8 @@ void WorldLoop(CONNECT_INFO* cfg) {
 	ReplicaManager replicaManager;
 	NetworkIDManager networkIdManager;
 	// -- REPLICA MANAGER -- //
-	rakServer->AttachPlugin(&replicaManager);
-	rakServer->SetNetworkIDManager(&networkIdManager);
+	WorldLoop::rakServer->AttachPlugin(&replicaManager);
+	WorldLoop::rakServer->SetNetworkIDManager(&networkIdManager);
 
 	replicaManager.SetAutoParticipateNewConnections(true);
 	//replicaManager.SetAutoConstructToNewParticipants(true);
@@ -123,7 +273,7 @@ void WorldLoop(CONNECT_INFO* cfg) {
 	//replicaManager.SetDownloadCompleteCB(&sendDownloadCompleteCB, &receiveDownloadCompleteCB);
 
 	//Before we start handling packets, we set this RakPeer as the world server of this instance
-	WorldServer::publishWorldServer(rakServer, &replicaManager, ServerAddress);
+	WorldServer::publishWorldServer(WorldLoop::rakServer, &replicaManager, ServerAddress);
 
 	ChatCommandManager::registerCommands(new FlightCommandHandler());
 	ChatCommandManager::registerCommands(new TeleportCommandHandler());
@@ -179,28 +329,28 @@ void WorldLoop(CONNECT_INFO* cfg) {
 		}
 		Logger::log("WRLD", "SMSH", "Load Rocketboxes!");
 		std::vector<vector<double>> RandomRocketBoxSpawnerPositionsList = {
-			vector<double>{-230.98828125, 580.8716430664062, 60.03725051879883, 0.0, -0.6300126910209656, 0.0, 0.776584804058075}, //Common Engines
-			vector<double>{-204.99325561523438, 603.874755859375, 65.57496643066406, 5.699339453713037e-06, -0.4083457887172699, 2.549541932239663e-06, 0.9128273129463196}, //Common Engines
-			vector<double>{-226.02926635742188, 580.739990234375, 85.7234115600586, 0.0, -0.633384644985199, 0.0, 0.773837149143219}, //All Nose Cones
-			vector<double>{-228.11669921875, 580.87255859375, 73.39395141601562, 0.0, -0.6340587139129639, 0.0, 0.7732849717140198}, //All Cockpits
-			vector<double>{-175.4554443359375, 603.8546752929688, 55.86145782470703, 0.0, -0.8110705018043518, 0.0, 0.5849484205245972}, //Common Engines
-			vector<double>{-189.98373413085938, 603.87451171875, 69.27857208251953, 0.0, 0.0, 0.0, 1.0}, //Common Engines
-			vector<double>{-122.21607971191406, 580.822998046875, -95.9127197265625, 0.0, -0.7626698017120361, 0.0, 0.6467880606651306}, //All Nose Cones
-			vector<double>{-545.647216796875, 631.883544921875, -69.66816711425781, 0.0, -0.17021068930625916, 0.0, 0.9854077100753784}, //All Engines
-			vector<double>{-456.68865966796875, 580.7138671875, 23.291332244873047, 0.0, 0.39795026183128357, 0.0, 0.9174069762229919}, //All Nose Cones
-			vector<double>{-448.4689636230469, 590.806884765625, -3.259254217147827, 0.0, 0.7083539962768555, 0.0,  0.7058573961257935}, //All Cockpits
-			vector<double>{-429.6986083984375, 580.605224609375, 18.859256744384766, 0.0, 0.9426403641700745, 0.0, -0.3338102400302887}, //All Cockpits
-			vector<double>{-443.56378173828125, 580.7138671875, 23.4738826751709, 0.0, 0.7193519473075867, 0.0, 0.6946458220481873}, //All Cockpits
-			vector<double>{-554.799560546875, 631.88330078125, 3.572044610977173, 0.0, 0.17966069281101227, 0.0, 0.9837286472320557}, //All Engines
-			vector<double>{-143.2361297607422, 580.7993774414062, -135.09811401367188, 0.0, 0.9838860630989075, 0.0, 0.1787971407175064}, //All Nose Cones
-			vector<double>{-454.46502685546875, 580.7138671875, -81.61656188964844, 0.0, 0.9307457804679871, 0.0, 0.3656669855117798}, //All Cockpits
-			vector<double>{-444.6343994140625, 580.789306640625, -81.53125762939453, 0.0, -0.39714813232421875, 0.0, 0.9177545309066772}, //All Cockpits
-			vector<double>{-549.9588623046875, 631.88330078125, 15.426615715026855, 0.0, -0.07584899663925171, 0.0, 0.9971193075180054}, //All Engines
-			vector<double>{-432.2442932128906, 590.74072265625, -58.52851104736328, 0.0, 0.6870933771133423, 0.0, 0.7265691161155701}, //All Cockpits
-			vector<double>{-224.9767608642578, 580.87158203125, -137.7026824951172, 0.0, -0.09497714787721634, 0.0, 0.9954794645309448}, //All Cockpits
-			vector<double>{-214.3241729736328, 580.82373046875, -141.78369140625, 0.0, 0.9793984889984131, 0.0, -0.20193716883659363}, //All Nose Cones
-			vector<double>{-557.6499633789062, 631.88330078125, -64.70059204101562, 0.0, 0.8870126008987427, 0.0, 0.4617452323436737}, //All Engines
-			vector<double>{-187.525390625, 580.7420043945312, -68.24020385742188, 0.0, 0.9235464930534363, 0.0, 0.38348668813705444}, //All Nose Cones
+			vector<double>{-230.98828125,		580.8716430664062, 60.03725051879883,  0.0, -0.6300126910209656,  0.0, 0.776584804058075},    //Common Engines
+			vector<double>{-204.99325561523438, 603.874755859375,  65.57496643066406,  5.6, -0.4083457887172699,  2.5, 0.9128273129463196},   //Common Engines
+			vector<double>{-226.02926635742188, 580.739990234375,  85.7234115600586,   0.0, -0.633384644985199,   0.0, 0.773837149143219},    //All Nose Cones
+			vector<double>{-228.11669921875,	580.87255859375,   73.39395141601562,  0.0, -0.6340587139129639,  0.0, 0.7732849717140198},   //All Cockpits
+			vector<double>{-175.4554443359375,	603.8546752929688, 55.86145782470703,  0.0, -0.8110705018043518,  0.0, 0.5849484205245972},   //Common Engines
+			vector<double>{-189.98373413085938, 603.87451171875,   69.27857208251953,  0.0, 0.0,                  0.0, 1.0},				  //Common Engines
+			vector<double>{-122.21607971191406, 580.822998046875,  -95.9127197265625,  0.0, -0.7626698017120361,  0.0, 0.6467880606651306},   //All Nose Cones
+			vector<double>{-545.647216796875,	631.883544921875,  -69.66816711425781, 0.0, -0.17021068930625916, 0.0, 0.9854077100753784},   //All Engines
+			vector<double>{-456.68865966796875, 580.7138671875,    23.291332244873047, 0.0, 0.39795026183128357,  0.0, 0.9174069762229919},   //All Nose Cones
+			vector<double>{-448.4689636230469,	590.806884765625,  -3.259254217147827, 0.0, 0.7083539962768555,   0.0,  0.7058573961257935},  //All Cockpits
+			vector<double>{-429.6986083984375,	580.605224609375,  18.859256744384766, 0.0, 0.9426403641700745,   0.0, -0.3338102400302887},  //All Cockpits
+			vector<double>{-443.56378173828125, 580.7138671875,    23.4738826751709,   0.0, 0.7193519473075867,   0.0, 0.6946458220481873},   //All Cockpits
+			vector<double>{-554.799560546875,	631.88330078125,   3.572044610977173,  0.0, 0.17966069281101227,  0.0, 0.9837286472320557},   //All Engines
+			vector<double>{-143.2361297607422,	580.7993774414062, -135.0981140136718, 0.0, 0.9838860630989075,   0.0, 0.1787971407175064},   //All Nose Cones
+			vector<double>{-454.46502685546875, 580.7138671875,    -81.61656188964844, 0.0, 0.9307457804679871,   0.0, 0.3656669855117798},   //All Cockpits
+			vector<double>{-444.6343994140625,	580.789306640625,  -81.53125762939453, 0.0, -0.39714813232421875, 0.0, 0.9177545309066772},   //All Cockpits
+			vector<double>{-549.9588623046875,	631.88330078125,   15.426615715026855, 0.0, -0.07584899663925171, 0.0, 0.9971193075180054},   //All Engines
+			vector<double>{-432.2442932128906,	590.74072265625,   -58.52851104736328, 0.0, 0.6870933771133423,   0.0, 0.7265691161155701},   //All Cockpits
+			vector<double>{-224.9767608642578,	580.87158203125,   -137.7026824951172, 0.0, -0.09497714787721634, 0.0, 0.9954794645309448},   //All Cockpits
+			vector<double>{-214.3241729736328,	580.82373046875,   -141.78369140625,   0.0, 0.9793984889984131,   0.0, -0.20193716883659363}, //All Nose Cones
+			vector<double>{-557.6499633789062,	631.88330078125,   -64.70059204101562, 0.0, 0.8870126008987427,   0.0, 0.4617452323436737},   //All Engines
+			vector<double>{-187.525390625,		580.7420043945312, -68.24020385742188, 0.0, 0.9235464930534363,   0.0, 0.38348668813705444},  //All Nose Cones
 		};
 		for (int i = 0; i < RandomRocketBoxSpawnerPositionsList.size(); i++)
 		{
@@ -232,146 +382,14 @@ void WorldLoop(CONNECT_INFO* cfg) {
 	
 	// This will be used in the saving of packets below...
 	try {
+		time_t nextWAPIrun = time(0);
+		LiveUpdateTable::createIfNotExists();
 		while (LUNI_WRLD) {
-			while (_kbhit()) {
-				unsigned char key = (unsigned  char)_getch();
-				switch (key) {
-				case 8:
-					//Backspace
-					if (buffer.size() > 0) {
-						buffer.pop_back();
-						std::cout << "\b";
-						std::cout << " ";
-						std::cout << "\b";
-					}
-					break;
-				case 13:
-				{
-					//Enter
-					std::string str(buffer.begin(), buffer.end());
-					buffer.clear();
-					//std::cout << "String: " << str << std::endl;
-
-					if (str != "") {
-						std::cout << std::endl;
-						if (str == "quit") {
-							LUNI_WRLD = false;
-						}
-						else {
-							std::cout << "Command '" << str << "' not found!" << std::endl;
-						}
-					}
-
-					buffer_started = false;
-					Logger::unmute();
-				}
-				break;
-				case 27:
-					//ESC
-					break;
-				default:
-					if (!buffer_started) {
-						std::cout << "> ";
-						buffer_started = true;
-						Logger::mute();
-					}
-
-					//Whitelist for chars
-					if ((48 <= key && key <= 57) || (97 <= key && key <= 122) || (65 <= key && key <= 90) || key == 32) {
-						buffer.push_back(key);
-						std::cout << key;
-					}
-				}
-				//ESC - 27
-				//ENTER - 13
-				//48 - 57 0-9
-				//97 - 122 a-z
-				//65 - 90 A-Z
+			WorldLoopThread(buffer, LUNI_WRLD, buffer_started, i);
+			if (time(0)>nextWAPIrun) {
+				WebAPIService::class_thread();
+				nextWAPIrun = time(0) + 10; //Time until next LiveUpdateCheck
 			}
-
-			RakSleep(30);	// This sleep keeps RakNet responsive
-			packet = rakServer->Receive(); // Recieve the packets from the server
-			if (packet == NULL) continue; // If packet is NULL, just continue without processing anything
-
-
-
-
-
-
-
-
-
-										  // This will save all packets recieved from the client if running from DEBUG
-#ifdef DEBUG
-			stringstream packetName;
-			packetName << ".//Saves//World_Packet" << i << ".bin";
-
-			if (packet->data[3] != 22) {
-				SavePacket(packetName.str(), (char*)packet->data, packet->length);
-				i++;
-			}
-#endif
-
-			RakNet::BitStream *pdata = new RakNet::BitStream(packet->data, packet->length, false);
-			unsigned char packetId;
-			pdata->Read(packetId);
-
-			// Create and send packets back here according to the one we got
-			switch (packetId) {
-			case ID_USER_PACKET_ENUM:
-			{
-				//This is a normal packet, that should be parsed and responded to accordingly.
-				SessionInfo session = SessionsTable::getClientSession(packet->systemAddress);
-				if (session.phase > SessionPhase::PHASE_NONE) {
-					parsePacket(rakServer, packet->systemAddress, pdata, (unsigned long)(packet->length - 1));
-				}
-				else {
-					Logger::log("WRLD", "CLIENT", "Recieved packet from unconnected user " + std::string(packet->systemAddress.ToString()));
-				}
-			}
-			break;
-			case ID_NEW_INCOMING_CONNECTION:
-#ifdef DEBUG
-				Logger::log("WRLD", "CLIENT", "Receiving a new connection...");
-#endif
-				break;
-
-			case ID_DISCONNECTION_NOTIFICATION:
-			{
-				PacketTools::printRest(pdata);
-				SessionInfo session = SessionsTable::getClientSession(packet->systemAddress);
-				std::string name = AccountsTable::getAccountName(session.accountid);
-				//auto usr = OnlineUsers->Find(packet->systemAddress);
-				//OnlineUsers->Remove(packet->systemAddress);
-				Logger::log("WRLD", "CLIENT", "Disconnected " + name);
-				Friends::broadcastFriendLogout(session.activeCharId);
-				ObjectsManager::clientLeaveWorld(session.activeCharId, packet->systemAddress);
-				//usr->DestructPlayer();
-				Session::disconnect(packet->systemAddress, SessionPhase::PHASE_INWORLD);
-			}
-			break;
-			case DefaultMessageIDTypes::ID_CONNECTION_LOST:
-			{
-				SessionInfo session = SessionsTable::getClientSession(packet->systemAddress);
-				Logger::log("WRLD", "", "Lost connection to " + std::string(packet->systemAddress.ToString()), LOG_ERROR);
-				if (session.phase >= SessionPhase::PHASE_AUTHENTIFIED) {
-					//auto usr = OnlineUsers->Find(packet->systemAddress);
-					if (session.phase >= SessionPhase::PHASE_PLAYING) {
-						Friends::broadcastFriendLogout(session.activeCharId);
-						ObjectsManager::clientLeaveWorld(session.activeCharId, packet->systemAddress);
-						//usr->DestructPlayer();
-					}
-					//OnlineUsers->Remove(packet->systemAddress);
-				}
-				Session::disconnect(packet->systemAddress, SessionPhase::PHASE_INWORLD);
-			}
-			break;
-			default:
-				stringstream s;
-				Logger::log("WRLD", "", "recieved unknown packet [" + std::to_string(packetId) + "]", LOG_DEBUG);
-				Logger::log("WRLD", "", RawDataToString(packet->data, packet->length), LOG_DEBUG);
-			}
-			rakServer->DeallocatePacket(packet);
 		}
 	}
 	catch (Exception e) {
@@ -394,8 +412,8 @@ void WorldLoop(CONNECT_INFO* cfg) {
 	InstancesTable::unregisterInstance(ServerAddress);
 
 	Logger::log("WRLD", "", "Quitting");
-	rakServer->Shutdown(0);
-	RakNetworkFactory::DestroyRakPeerInterface(rakServer);
+	WorldLoop::rakServer->Shutdown(0);
+	RakNetworkFactory::DestroyRakPeerInterface(WorldLoop::rakServer);
 
 
 	while (!_kbhit()){
@@ -1695,6 +1713,7 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 
 					CharactersTable::setCharactersPlace(player->objid, place);
 					if (unknownBit) {
+						Logger::log("WRLD", "PMUP", "ALERT: Unknown Bit of Player is TRUE!");
 						Chat::sendMythranInfo(i.activeCharId, "Congratulations! You found an unknown thing! Please Report to a developer \"found unknownBit GM:22\" and then describe what you did! Thanks!", "Server");
 					}
 					//PlayerObject (PlayerObject *)ObjectsManager::getObjectByID(i.activeCharId));
@@ -1717,7 +1736,7 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 						break;
 					}
 					case 1800: {
-						if (pos.y < -105) {
+						if (pos.y < -70) {
 							Logger::log("WRLD", "TRIGGER", "Smashing Character");
 							GameMSG::die(player->objid, true, false, 0.0f, L"WorldDeath", 0.0f, 0.0f, 0.0f, player->objid, player->objid);
 						}
