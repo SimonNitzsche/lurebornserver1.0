@@ -379,8 +379,23 @@ void Chat::sendChatMessage(SystemAddress addr, std::wstring message, std::wstrin
 	}
 	aw->Write(u16); //u16
 	if (displayChatBubble) {
-		//RakNet::BitStream *cb = WorldServerPackets::InitGameMessage(SessionsTable::getClientSession(addr).activeCharId, GameMessage::DISPLAY_CHAT_BUBBLE);
-		//WorldServer::sendPacket(cb, addr);
+		RakNet::BitStream *cb = WorldServerPackets::InitGameMessage(SessionsTable::getClientSession(addr).activeCharId, GameMessage::NOTIFY_CLIENT_ZONE_OBJECT);
+		
+		std::wstring Ncommand = L"sendToclient_bubble";
+		
+		/*for (unsigned int k = 0; k < Ncommand.size(); k++){
+			cb->Write(Ncommand.at(k));
+		}*/
+		cb->Write(Ncommand);
+		
+		cb->Write((int)1); //param1
+		cb->Write((int)1); //param2
+		
+		cb->Write((long long)SessionsTable::getClientSession(addr).activeCharId);
+		std::string msgs((const char*)&message[0], sizeof(wchar_t)/sizeof(char)*message.size());
+		cb->Write(msgs);
+		
+		WorldServer::sendPacket(cb, addr);
 	}
 	WorldServer::sendPacket(aw, addr);
 }

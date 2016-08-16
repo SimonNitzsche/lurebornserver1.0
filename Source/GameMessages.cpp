@@ -14,6 +14,7 @@
 #include "UtfConverter.h"
 #include "Logger.h"
 #include "Packet.h"
+#include "Characters.h"
 
 #include <map>
 #include <sstream>
@@ -487,6 +488,7 @@ void GameMSG::playAnimation(long long charid, std::wstring animationID, bool pla
 void GameMSG::setName(long long charid, std::wstring name) {
 	SessionInfo s = SessionsTable::getClientSession(SessionsTable::findCharacter(charid));
 
+	//this one is for the subject player
 	RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(charid, SET_NAME);
 	bs->Write((unsigned long)name.size());
 
@@ -495,9 +497,24 @@ void GameMSG::setName(long long charid, std::wstring name) {
 		bs->Write((char)0);
 	}
 
+
+	//This one is for the other players
+	RakNet::BitStream *bsc = WorldServerPackets::InitGameMessage(charid, SET_NAME);
+	name.append(Characters::GetCharacterSubfix(charid));
+	bsc->Write((unsigned long)name.size());
+	for (int i = 0; i < name.size(); i++) {
+		bsc->Write((char)name.at(i));
+		bsc->Write((char)0);
+	}
+
 	std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
 	for (unsigned int k = 0; k < sessionsz.size(); k++){
-		WorldServer::sendPacket(bs, sessionsz.at(k).addr);
+		if (sessionsz.at(k).activeCharId==charid) {
+			WorldServer::sendPacket(bs, sessionsz.at(k).addr);
+		}
+		else {
+			WorldServer::sendPacket(bsc, sessionsz.at(k).addr);
+		}
 	}
 }
 
@@ -564,6 +581,10 @@ void GameMSG::resurrect(long long charid, bool immediate)
 		for (unsigned int k = 0; k < sessionsz.size(); k++) {
 			WorldServer::sendPacket(bs, sessionsz.at(k).addr);
 		}
+
+		bs = WorldServerPackets::InitGameMessage(s.activeCharId, SET_USER_CTRL_COMP_PAUSE);
+		bs->Write(false);
+		WorldServer::sendPacket(bs, s.addr);
 	}
 }
 

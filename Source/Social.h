@@ -33,7 +33,7 @@ public:
 
 class Chat{
 public:
-	static void sendChatMessage(SystemAddress addr, std::wstring message, std::wstring sender = L"", bool isMythran = false, bool displayChatBubble=false);
+	static void sendChatMessage(SystemAddress addr, std::wstring message, std::wstring sender = L"", bool isMythran = false, bool displayChatBubble=true);
 	static void sendChatMessage(long long reciever, std::wstring message, std::wstring sender = L"", bool isMythran = false);
 	static void broadcastChatMessage(unsigned short zone, std::wstring message, std::wstring sender = L"", bool isMythran = false);
 	static void sendMythranInfo(long long reciever, std::string message, std::string title);

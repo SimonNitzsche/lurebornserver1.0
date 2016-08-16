@@ -128,3 +128,33 @@ void Characters::DeleteCharacter(unsigned int accountid, long long charid){
 	EquipmentTable::deleteEquipment(charid); //Delete Equipment entries
 	InventoryTable::deleteInventory(charid); //Delete inventory entries
 }
+
+std::wstring Characters::GetCharacterSubfix(long long charid) {
+	auto qr = Database::Query("SELECT `gmlevel` FROM `characters` WHERE objectID=" + std::to_string(charid)+" LIMIT 1");
+	if (mysql_num_rows(qr) == 0) return 0;
+	auto ftc = mysql_fetch_row(qr);
+	std::istringstream o(ftc[0]);
+	unsigned int r;
+	o >> r;
+
+	std::wstringstream subfix;
+	subfix<<L" - ";
+
+	switch (r) {
+	default: {
+		//return L""; //uncomment this to deactivate the Subfix for players
+		subfix << L"Beta Tester";
+	}break;
+	case 1: {
+		subfix << L"Moderator";
+	}break;
+	case 2: {
+		subfix << L"Developer";
+	}break;
+	case 3: {
+		subfix << L"Owner";
+	}
+	}
+
+	return subfix.str();
+}
