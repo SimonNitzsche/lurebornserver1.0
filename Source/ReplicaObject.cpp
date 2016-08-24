@@ -68,9 +68,15 @@ void ReplicaObject::writeToPacket(RakNet::BitStream * packet, REPLICA_PACKET_TYP
 		packet->Write(this->gmlevel > 0);
 		if (this->gmlevel > 0){ std::cout << "Writing gmlevel" << std::endl; packet->Write(this->gmlevel); } // gmlevel
 	}
+
 	packet->Write(true);
 	packet->Write(false);
 	packet->Write(false);
+	/*packet->Write((this->target>0));
+	if (this->target > 0) {
+		packet->Write(this->target);
+		packet->Write(false);
+	}*/
 
 	for (std::vector<ReplicaComponent *>::iterator it = components.begin(); it != components.end(); ++it){
 		(*it)->writeToPacket(packet, packetType);

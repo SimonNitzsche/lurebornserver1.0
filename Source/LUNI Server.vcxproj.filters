@@ -12,10 +12,6 @@
     <Filter Include="Source Files\Service">
       <UniqueIdentifier>{2cc4dc73-17a5-42a5-bab6-9cd9ebcf8003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Source Files\Replica">
       <UniqueIdentifier>{45fbbd64-5fa5-4839-9ed0-a76960d17fd8}</UniqueIdentifier>
     </Filter>
@@ -63,6 +59,10 @@
     </Filter>
     <Filter Include="Header Files\Database\SQLite">
       <UniqueIdentifier>{92784c9f-48f0-45b2-b878-3d36fca8c3dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -180,9 +180,6 @@
     <ClInclude Include="SQLiteDatabase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SQLite\sqdb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DroppedLootObject.h">
       <Filter>Header Files\Replica</Filter>
     </ClInclude>
@@ -213,8 +210,14 @@
     <ClInclude Include="GenericObject.h">
       <Filter>Header Files\Replica</Filter>
     </ClInclude>
-    <ClInclude Include="sha512.h">
-      <Filter>Header Files\Common\Utility</Filter>
+    <ClInclude Include="SQLite\sqdb.h">
+      <Filter>Header Files\Database\SQLite</Filter>
+    </ClInclude>
+    <ClInclude Include="WebAPIService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StaticObjectsDB.h">
+      <Filter>Header Files\Database</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -320,9 +323,6 @@
     <ClCompile Include="SQLiteDatabase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SQLite\sqdb.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DroppedLootObject.cpp">
       <Filter>Source Files\Replica</Filter>
     </ClCompile>
@@ -353,8 +353,20 @@
     <ClCompile Include="GenericObject.cpp">
       <Filter>Source Files\Replica</Filter>
     </ClCompile>
-    <ClCompile Include="sha512.cpp">
-      <Filter>Source Files\Common\Utility</Filter>
+    <ClCompile Include="LiveUpdateDB.cpp">
+      <Filter>Source Files\Database</Filter>
+    </ClCompile>
+    <ClCompile Include="SQLite\sqdb.cpp">
+      <Filter>Source Files\Database\SQLite</Filter>
+    </ClCompile>
+    <ClCompile Include="WebAPIService.cpp">
+      <Filter>Source Files\Service</Filter>
+    </ClCompile>
+    <ClCompile Include="LiveUpdateDB.h">
+      <Filter>Header Files\Database</Filter>
+    </ClCompile>
+    <ClCompile Include="StaticObjectsDB.cpp">
+      <Filter>Source Files\Database</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -366,8 +378,5 @@
     <Image Include="lu.ico">
       <Filter>Resource Files</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="sha512-license.txt" />
   </ItemGroup>
 </Project>

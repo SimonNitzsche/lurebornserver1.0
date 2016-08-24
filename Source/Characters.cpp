@@ -9,6 +9,7 @@
 #include "Logger.h"
 #include "WorldServer.h"
 #include "CDClientDB.h"
+#include "ObjectID.h"
 
 bool Characters::CreateCharacter(RakNet::BitStream *packet, SystemAddress address, unsigned int accountid){
 	unsigned char creationStatus = 0;
@@ -90,12 +91,12 @@ bool Characters::CreateCharacter(RakNet::BitStream *packet, SystemAddress addres
 
 				//To prepare the starter kit, create a shirtID and a pantsID object
 				//Add them to the inventory and equip them
-				long long shirtObjid = ObjectsTable::createObject(shirtID);
-				InventoryTable::insertItem(charObjid, shirtObjid, 1, 0, true);
+				long long shirtObjid = ObjectID::generateObjectID();
+				InventoryTable::insertItem(charObjid, shirtID, shirtObjid, 1, 0, true);
 				EquipmentTable::equipItem(charObjid, shirtObjid, CDClientDB::getItemType(CDClientDB::getComponentID(shirtID, 11)));
 
-				long long pantsObjid = ObjectsTable::createObject(pantsID);
-				InventoryTable::insertItem(charObjid, pantsObjid, 1, 1, true);
+				long long pantsObjid = ObjectID::generateObjectID();
+				InventoryTable::insertItem(charObjid, pantsID, pantsObjid, 1, 1, true);
 				EquipmentTable::equipItem(charObjid, pantsObjid, CDClientDB::getItemType(CDClientDB::getComponentID(shirtID, 11)));
 			}
 			else{

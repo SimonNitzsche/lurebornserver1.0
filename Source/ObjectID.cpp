@@ -15,7 +15,7 @@ unsigned long long ObjectID::generateObjectID() {
 	unsigned long long least = 288300000000000000;
 	
 	unsigned long long objectID = getRandomInRange(least, most);
-	cout << "Generated Object ID = " << objectID << endl;
+	//cout << "Generated Object ID = " << objectID << endl;
 
 	if (validateObjectID(objectID) == false) {
 		return generateObjectID();
@@ -29,7 +29,7 @@ unsigned long long ObjectID::generateSpawnerID() {
 	unsigned long long least = 700000000000000000;
 
 	unsigned long long spawnerID = getRandomInRange(least, most);
-	cout << "Generated Spawner ID = " << spawnerID << endl;
+	//cout << "Generated Spawner ID = " << spawnerID << endl;
 
 	if (!validateObjectID(spawnerID)) {
 		return generateSpawnerID();
@@ -41,7 +41,7 @@ unsigned long long ObjectID::generateSpawnerID() {
 bool ObjectID::validateObjectID(unsigned long long objid) {
 	ReplicaObject *object = ObjectsManager::getObjectByID(objid);
 
-	bool isObjectNULL = object == NULL;
+	bool isObjectNULL = (object == NULL);
 	return isObjectNULL;
 }
 

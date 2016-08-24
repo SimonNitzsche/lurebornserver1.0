@@ -459,235 +459,122 @@ std::wstring ItemsCommandHandler::getSyntax(){
 }
 
 void AddItemCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params){
-	Chat::sendChatMessage(s->addr, L"This command use outdated code and needs to be redone!");
-	return;
-
-	if (params->size() == 1)
-	{
-		std::string checkLOT = UtfConverter::ToUtf8(params->at(0));
-		std::string checkAmount = "1";
-		bool flag = true;
-		for (unsigned int i = 0; i < checkLOT.length(); i++){
-			if (!isdigit(checkLOT.at(i)))
-				flag = false;
-		}
-		for (unsigned int i = 0; i < checkAmount.length(); i++){
-			if (!isdigit(checkAmount.at(i)))
-				flag = false;
-		}
-		if (flag){
-			long lot = std::stoi(params->at(0));
-			unsigned long amount = std::stoi(checkAmount);
-
-			unsigned long slot = -1;
-			for (int i = 0; (slot == -1) && (i != 24); i++){
-				if (InventoryTable::getItemFromSlot(s->activeCharId, i) == -1)
-					slot = i;
+	ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(s->activeCharId);
+	//if (cinfo.info.gmlevel > 0) {
+	if (1 + 1 == 2) {
+		if (params->size() > 0) {
+			std::string checkLOT = UtfConverter::ToUtf8(params->at(0));
+			std::string checkAmount = UtfConverter::ToUtf8(L"1");
+			/*long long charid = 0;*/
+			if (params->size() > 1) {
+				checkAmount = UtfConverter::ToUtf8(params->at(1));
 			}
+			//std::string name = UtfConverter::ToUtf8(params->at(2));
 
-			if (slot == -1){
-				Chat::sendChatMessage(s->addr, L"Can't add requested item to your inventory. There aren't any free slots!");
+			 //CharactersTable::getObjidFromCharacter(name);
+
+			bool flag = true;
+			for (unsigned int i = 0; i < checkLOT.length(); i++) {
+				if (!isdigit(checkLOT.at(i)))
+					flag = false;
 			}
-			else{
-				long long objid = ObjectsTable::createObject(lot);
-				InventoryTable::insertItem(s->activeCharId, objid, amount, slot, false);
-				//send live packet here
-
-				RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(s->activeCharId, 227);
-				ef->Write((bool)false);
-				ef->Write((bool)false);
-				ef->Write((bool)false);
-				ef->Write((int)0); //bool, false
-				ef->Write((unsigned long)0);
-				ef->Write(stol(checkLOT));
-				ef->Write((long long)0); //bool false
-				ef->Write((int)0); //bool false
-				//ef->Write((bool)true);
-				ef->Write((unsigned long)amount);
-				//ef->Write((bool)true);
-				ef->Write((unsigned long)0);
-				ef->Write((long long)objid);
-				ef->Write((float)0);
-				ef->Write((float)0);
-				ef->Write((float)0);
-				ef->Write((bool)true);
-				ef->Write((int)slot); //unsigned long
-
-
-
-				WorldServer::sendPacket(ef, s->addr);
-
-
-				Chat::sendChatMessage(s->addr, L"Successfully added the requested item to your inventory!");
+			for (unsigned int i = 0; i < checkAmount.length(); i++) {
+				if (!isdigit(checkAmount.at(i)))
+					flag = false;
 			}
-		}
-		else{
-			Chat::sendChatMessage(s->addr, L"Syntax: /give " + this->getSyntax());
-		}
-	}
-	else if (params->size() == 2){
-		std::string checkLOT = UtfConverter::ToUtf8(params->at(0));
-		std::string checkAmount = UtfConverter::ToUtf8(params->at(1));
-		bool flag = true;
-		for (unsigned int i = 0; i < checkLOT.length(); i++){
-			if (!isdigit(checkLOT.at(i)))
-				flag = false;
-		}
-		for (unsigned int i = 0; i < checkAmount.length(); i++){
-			if (!isdigit(checkAmount.at(i)))
-				flag = false;
-		}
-		if (flag){
-			long lot = std::stoi(params->at(0));
-			unsigned long amount = std::stoi(params->at(1));
+			if (flag) {
+				long lot = std::stoi(params->at(0));
+				unsigned long amount = std::stoi(checkAmount);
 
-			unsigned long slot = -1;
-			for (int i = 0; (slot == -1) && (i != 24); i++){
-				if (InventoryTable::getItemFromSlot(s->activeCharId, i) == -1)
-					slot = i;
-			}
+				unsigned long slot = -1;
+				for (int i = 0; (slot == -1) && (i != 24); i++) {
+					if (InventoryTable::getItemFromSlot(s->activeCharId, i) == -1)
+						slot = i;
+				}
+				for (unsigned int i = 0; i < checkAmount.length(); i++) {
+					if (!isdigit(checkAmount.at(i)))
+						flag = false;
+				}
+				if (slot == -1) {
+					Chat::sendChatMessage(s->addr, L"Can't add requested item to your inventory. There aren't any free slots!");
+					RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(s->activeCharId, 1516);
+					ef->Write((long)1);
+					ef->Write((bool)false);
+					WorldServer::sendPacket(ef, s->addr);
+				}
+				else {
+					long long objid = ObjectID::generateObjectID();
 
-			if (slot == -1){
-				Chat::sendChatMessage(s->addr, L"Can't add requested item to your inventory. There aren't any free slots!");
-			}
-			else{
-				long long objid = ObjectsTable::createObject(lot);
-				InventoryTable::insertItem(s->activeCharId, objid, amount, slot, false);
-				//send live packet here
-				
-				RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(s->activeCharId, 227);
-				ef->Write((bool) false);
-				ef->Write((bool) false);
-				ef->Write((bool) false);
-				ef->Write((bool) false);
-				ef->Write((unsigned long)0);
-				ef->Write(stol(checkLOT));
-				ef->Write((bool)false);
-				ef->Write((bool)false);
-				ef->Write((bool)true);
-				ef->Write((unsigned long)stol(checkAmount));
-				ef->Write((bool)true);
-				ef->Write((unsigned long)0);
-				ef->Write(objid);
-				ef->Write((float)0);
-				ef->Write((float)0);
-				ef->Write((float)0);
-				ef->Write((bool) true);
-				ef->Write((unsigned long)slot);
-				
+					std::stringstream ss;
+					ss << "SELECT `type` FROM `Objects` WHERE `id` = '" << lot << "';";
+					sqdb::Statement statement = SQLiteDatabase::Query("cdclient.sqlite", ss.str().c_str());
+
+					int tab;
+					if (statement.Next()) {
+						std::string type = statement.GetField(0).GetString();
+						if (type == "Behavior") {
+							tab = 7;
+						}
+						else if (type == "LEGO brick") {
+							tab = 2;
+						}
+						else if (type == "Model" || type == "Rebuildables") {
+							tab = 5;
+						}
+						else {
+							tab = 0;
+						}
+					}
 
 
-				WorldServer::sendPacket(ef, s->addr);
+					InventoryTable::insertItem(s->activeCharId, lot, objid, amount, slot, false, tab);
+					//send live packet here
 
-
-				Chat::sendChatMessage(s->addr, L"Successfully added the requested item to your inventory!");
-			}
-		}
-		else{
-			Chat::sendChatMessage(s->addr, L"Syntax: /give " + this->getSyntax());
-		}
-	}
-	else if (params->size() == 3){
-		std::string checkLOT = UtfConverter::ToUtf8(params->at(0));
-		std::string checkAmount = UtfConverter::ToUtf8(params->at(1));
-		bool flag = true;
-		for (unsigned int i = 0; i < checkLOT.length(); i++){
-			if (!isdigit(checkLOT.at(i)))
-				flag = false;
-		}
-		for (unsigned int i = 0; i < checkAmount.length(); i++){
-			if (!isdigit(checkAmount.at(i)))
-				flag = false;
-		}
-		if (flag){
-			long lot = std::stoi(params->at(0));
-			unsigned long amount = std::stoi(params->at(1));
-			std::string name = UtfConverter::ToUtf8(params->at(2));
-
-			bool found = false;
-			long long charid = CharactersTable::getObjidFromCharacter(name);
-			if (charid > 0){
-				SystemAddress addr = SessionsTable::findCharacter(charid);
-				if (addr != UNASSIGNED_SYSTEM_ADDRESS){
-					found = true;
+					GameMSG::addItemToInventoryClientSync(s->activeCharId, objid, stol(checkLOT), slot, true);
+					/*
+					RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(s->activeCharId, 227);
+					ef->Write((bool)false); //bBound
+					ef->Write((bool)false); //bIsBOP
+					ef->Write((int)0);
+					ef->Write((bool)false);
+					ef->Write((unsigned long)0);
+					ef->Write(stol(checkLOT));
+					ef->Write((bool)false);
+					ef->Write((int)tab);
+					//ef->Write((bool)true);
+					ef->Write((unsigned long)stol(checkAmount));
+					//ef->Write((bool)true);
+					ef->Write((unsigned long)0);
+					ef->Write(objid);
+					ef->Write((float)0);
+					ef->Write((float)0);
+					ef->Write((float)0);
+					ef->Write((bool)true);
+					ef->Write((unsigned long)slot);*/
 
 					unsigned long slot = -1;
-					for (int i = 0; (slot == -1) && (i != 24); i++){
-						if (InventoryTable::getItemFromSlot(charid, i) == -1)
+					for (int i = 0; (slot == -1) && (i != 24); i++) {
+						if (InventoryTable::getItemFromSlot(s->activeCharId, i) == -1)
 							slot = i;
 					}
 
-					if (slot == -1){
-						std::stringstream ss;
-						ss << "Can't add requested item to ";
-						ss << name;
-						ss << "'s inventory. There aren't any free slots!";
-
-						Chat::sendChatMessage(s->addr, UtfConverter::FromUtf8(ss.str()));
-					}
-					else{
-						long long objid = ObjectsTable::createObject(lot);
-						InventoryTable::insertItem(charid, objid, amount, slot, false);
-						PlayerObject *player = (PlayerObject *)ObjectsManager::getObjectByID(charid);
-						ObjectsManager::serialize(player);
-						std::stringstream ss;
-						ss << "Successfully added the requested item to ";
-						ss << name;
-						ss << "'s inventory!";
-						Chat::sendChatMessage(s->addr, UtfConverter::FromUtf8(ss.str()));
-
-						std::string source = "UNKNOWN";
-
-						ListCharacterInfo c = CharactersTable::getCharacterInfo(s->activeCharId);
-						if (c.info.objid > 0){
-							source = c.info.name;
-						}
-
-						RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(s->activeCharId, 227);
+					if (slot == -1) {
+						Chat::sendChatMessage(s->addr, L"Can't add requested item to your inventory. There aren't any free slots!");
+						RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(s->activeCharId, 1516);
+						ef->Write((long)1);
 						ef->Write((bool)false);
-						ef->Write((bool)false);
-						ef->Write((bool)false);
-						ef->Write((bool)false);
-						ef->Write((unsigned long)0);
-						ef->Write(stol(checkLOT));
-						ef->Write((bool)false);
-						ef->Write((bool)false);
-						ef->Write((bool)true);
-						ef->Write((unsigned long)stol(checkAmount));
-						ef->Write((bool)true);
-						ef->Write((unsigned long)0);
-						ef->Write(objid);
-						ef->Write((float)0);
-						ef->Write((float)0);
-						ef->Write((float)0);
-						ef->Write((bool)true);
-						ef->Write((unsigned long)slot);
 						WorldServer::sendPacket(ef, s->addr);
-
-						std::stringstream ss2;
-						ss2 << source;
-						ss2 << " added an item with LOT ";
-						ss2 << std::to_string(lot);
-						ss2 << " to your inventory. Please travel to another world or relog to reload your inventory.";
-						Chat::sendChatMessage(addr, UtfConverter::FromUtf8(ss2.str()));
 					}
+
 				}
 			}
-
-			if (!found){
-				std::stringstream ss;
-				ss << "Can't add requested item to ";
-				ss << name;
-				ss << "'s inventory. Player not found/online!";
-				Chat::sendChatMessage(s->addr, UtfConverter::FromUtf8(ss.str()));
-			}
 		}
-		else{
+		else {
 			Chat::sendChatMessage(s->addr, L"Syntax: /give " + this->getSyntax());
 		}
 	}
-	else{
-		Chat::sendChatMessage(s->addr, L"Syntax: /give " + this->getSyntax());
+	else {
+		Chat::sendChatMessage(s->addr, L"You don't have permission for that command.");
 	}
 }
 
@@ -738,7 +625,7 @@ void ClientCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstrin
 }
 
 std::vector<std::wstring> ClientCommandHandler::getCommandNames(){
-	return{ L"loc"};
+	return{ L"dance", L"clap"};
 }
 
 std::wstring ClientCommandHandler::getDescription(){
@@ -1010,19 +897,27 @@ void SpawnCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring
 
 					c3->setPosition(pos);
 					c3->setRotation(rot);
-					std::ostringstream st;
-					st << "INSERT INTO npcs (`name`, `world`, `x`, `y`, `z`, `rotX`, `rotY`, `rotZ`, `rotW`) VALUES ('" << stoul(params->at(0)) << "', '" << cinfo.lastPlace.zoneID << "' ,'" << player->getComponent1()->getPosition().x << "' , '" << player->getComponent1()->getPosition().y << "', '" << player->getComponent1()->getPosition().z << "', '" << player->getComponent1()->getRotation().x << "', '" << player->getComponent1()->getRotation().y << "', '" << player->getComponent1()->getRotation().z << "', '" << player->getComponent1()->getRotation().w << "');";
-					Logger::log("NPC", "SAVE", st.str());
-					int state = mysql_query(Database::getConnection(), st.str().c_str());
-					if (state != 0){
-						std::wstringstream wss;
-						wss << "NPC Was NOT saved. MYSQL Error. " << mysql_error(Database::getConnection());
-						Chat::sendChatMessage(s->addr, wss.str());
-					}
-					else{
-						std::wstringstream wss;
-						wss << "NPC Was Saved";
-						Chat::sendChatMessage(s->addr, wss.str());
+
+					bool doSave = false;
+					if (params->size() > 1)
+						if (params->at(1) == L"true" || params->at(1) == L"yes" || params->at(1) == L"save")
+							doSave = true;
+
+					if (doSave) {
+						std::ostringstream st;
+						st << "INSERT INTO npcs (`name`, `world`, `x`, `y`, `z`, `rotX`, `rotY`, `rotZ`, `rotW`) VALUES ('" << stoul(params->at(0)) << "', '" << cinfo.lastPlace.zoneID << "' ,'" << player->getComponent1()->getPosition().x << "' , '" << player->getComponent1()->getPosition().y << "', '" << player->getComponent1()->getPosition().z << "', '" << player->getComponent1()->getRotation().x << "', '" << player->getComponent1()->getRotation().y << "', '" << player->getComponent1()->getRotation().z << "', '" << player->getComponent1()->getRotation().w << "');";
+						Logger::log("NPC", "SAVE", st.str());
+						int state = mysql_query(Database::getConnection(), st.str().c_str());
+						if (state != 0) {
+							std::wstringstream wss;
+							wss << "NPC Was NOT saved. MYSQL Error. " << mysql_error(Database::getConnection());
+							Chat::sendChatMessage(s->addr, wss.str());
+						}
+						else {
+							std::wstringstream wss;
+							wss << "NPC Was Saved";
+							Chat::sendChatMessage(s->addr, wss.str());
+						}
 					}
 					ObjectsManager::registerObject(npc);
 					ObjectsManager::create(npc);
@@ -1269,29 +1164,10 @@ void MissionCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstri
 							Chat::sendChatMessage(s->addr, L"Can't add requested item to your inventory. There aren't any free slots!");
 						}
 						else{
-							long long objid = ObjectsTable::createObject(statement.GetField(0).GetInt());
-							InventoryTable::insertItem(s->activeCharId, objid, statement1.GetField(0).GetInt(), slot, false);
+							long long objid = ObjectID::generateObjectID();
+							InventoryTable::insertItem(s->activeCharId, statement.GetField(0).GetInt(), objid, objid, slot, false);
 							//send live packet here
-							RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(s->activeCharId, 227);
-							ef->Write((bool)false);
-							ef->Write((bool)false);
-							ef->Write((bool)false);
-							ef->Write((bool)false);
-							ef->Write((unsigned long)0);
-							ef->Write((unsigned long)statement.GetField(0).GetInt());
-							ef->Write((bool)false);
-							ef->Write((bool)false);
-							ef->Write((bool)true);
-							ef->Write((unsigned long)statement.GetField(0).GetInt());
-							ef->Write((bool)true);
-							ef->Write((unsigned long)0);
-							ef->Write(objid);
-							ef->Write((float)0);
-							ef->Write((float)0);
-							ef->Write((float)0);
-							ef->Write((bool)true);
-							ef->Write((unsigned long)slot);
-							WorldServer::sendPacket(ef, s->addr);
+							GameMSG::addItemToInventoryClientSync(s->activeCharId, objid, statement.GetField(0).GetInt(), slot, true);
 						}
 					}
 				}
@@ -1315,7 +1191,7 @@ std::wstring MissionCommandHandler::getDescription() {
 }
 
 std::wstring MissionCommandHandler::getShortDescription() {
-	return L"Offer/COmplete/Rewards";
+	return L"Offer/Complete/Rewards";
 }
 
 std::wstring MissionCommandHandler::getSyntax() {
@@ -1526,3 +1402,23 @@ std::wstring SmashCommandHandler::getShortDescription() {
 std::wstring SmashCommandHandler::getSyntax() {
 	return L"<oID>";
 }
+/*
+void DisplayMSGBoxCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
+
+}
+
+std::vector<std::wstring> DisplayMSGBoxCommandHandler::getCommandNames() {
+	return{ L"loc" };
+}
+
+std::wstring DisplayMSGBoxCommandHandler::getDescription() {
+	return L"";
+}
+
+std::wstring DisplayMSGBoxCommandHandler::getShortDescription() {
+	return L"";
+}
+
+std::wstring DisplayMSGBoxCommandHandler::getSyntax() {
+	return L"";
+}*/

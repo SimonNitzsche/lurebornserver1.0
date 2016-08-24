@@ -336,6 +336,7 @@ public:
 	static void setName(long long charid, std::wstring name);
 	static void addSkill(long long charid, unsigned long skillid, unsigned long slot);
 	static void removeSkill(long long charid, unsigned long skillid);
+	static void SetStunned(long long charid, std::string StateChangeType, bool cantAttack=false, bool cantAttackOCWA=false, bool cantEquip=false, bool cantEquipOCWA=false, bool cantInteract=false, bool cantInteractOCWA=false, bool cantJump=false, bool cantJumpOCWA=false, bool cantMove=false, bool cantMoveOCWA=false, bool cantTurn=false, bool cantTurnOCWA=false, bool cantUseItem=false, bool cantUseItemOCWA=false, bool dontTerminateInteract=false, bool bIgnoreImmunity=true);
 	static void resurrect(long long charid, bool immediate);
 	static void knockback(long long charid, long long casterid, COMPONENT1_POSITION position);
 	static void addItemToInventoryClientSync(long long charid, long long objectID, long lotTemplate, long slotid, bool showFlyingLoot);

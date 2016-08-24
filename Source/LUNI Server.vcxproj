@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Auth|Win32">
       <Configuration>Auth</Configuration>
@@ -109,7 +109,6 @@
     <ClInclude Include="LootObject.h" />
     <ClInclude Include="NPCObject.h" />
     <ClInclude Include="ObjectID.h" />
-    <ClInclude Include="sha512.h" />
     <ClInclude Include="SmashableObject.h" />
     <ClInclude Include="SpawnerObject.h" />
     <ClInclude Include="SQLiteDatabase.h" />
@@ -131,6 +130,7 @@
     <ClInclude Include="IniReader.h" />
     <ClInclude Include="InventoryDB.h" />
     <ClInclude Include="LDF.h" />
+    <ClCompile Include="LiveUpdateDB.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="md5.h" />
     <ClInclude Include="Packet.h" />
@@ -145,8 +145,10 @@
     <ClInclude Include="ServerDB.h" />
     <ClInclude Include="serverLoop.h" />
     <ClInclude Include="Social.h" />
+    <ClInclude Include="StaticObjectsDB.h" />
     <ClInclude Include="TimeUtil.h" />
     <ClInclude Include="UtfConverter.h" />
+    <ClInclude Include="WebAPIService.h" />
     <ClInclude Include="World.h" />
     <ClInclude Include="WorldConnection.h" />
     <ClInclude Include="Worlds.h" />
@@ -161,7 +163,6 @@
     <ClCompile Include="LootObject.cpp" />
     <ClCompile Include="NPCObject.cpp" />
     <ClCompile Include="ObjectID.cpp" />
-    <ClCompile Include="sha512.cpp" />
     <ClCompile Include="SmashableObject.cpp" />
     <ClCompile Include="SpawnerObject.cpp" />
     <ClCompile Include="SQLiteDatabase.cpp" />
@@ -179,6 +180,7 @@
     <ClCompile Include="GameMessages.cpp" />
     <ClCompile Include="IniReader.cpp" />
     <ClCompile Include="InventoryDB.cpp" />
+    <ClCompile Include="LiveUpdateDB.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="md5.cpp" />
@@ -193,7 +195,9 @@
     <ClCompile Include="Packet.cpp" />
     <ClCompile Include="CharPackets.cpp" />
     <ClCompile Include="Social.cpp" />
+    <ClCompile Include="StaticObjectsDB.cpp" />
     <ClCompile Include="UtfConverter.cpp" />
+    <ClCompile Include="WebAPIService.cpp" />
     <ClCompile Include="World.cpp" />
     <ClCompile Include="WorldConnection.cpp" />
     <ClCompile Include="WorldLoop.cpp" />
@@ -210,9 +214,6 @@
     <ProjectReference Include="RakNet\RakNet.vcxproj">
       <Project>{767ceb9f-4c3d-46fc-a225-e0f3800dc29c}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="sha512-license.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

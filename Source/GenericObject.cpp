@@ -20,6 +20,8 @@
 
 using namespace std;
 
+bool outputAll = false; //Prints everything to the console
+
 GenericObject::GenericObject(unsigned long lot, unsigned long currentZone, COMPONENT1_POSITION pos, COMPONENT1_ROTATION rot, COMPONENT1_VELOCITY vel, COMPONENT1_VELOCITY_ANGULAR vel_ang) {
 	Logger::log("REPL", "OBJ", "Initializing New Generic Object");
 
@@ -392,7 +394,9 @@ void GenericObject::initializeObject(unsigned long lot, COMPONENT1_POSITION pos,
 	sort(list.begin(), list.end(), compareComponent);
 	for (int i = 0; i < list.size(); i++){
 		ReplicaComponent *r = list.at(i);
-		Logger::log("GENERIC", "OBJECT", std::to_string(r->serialization));
+		if (outputAll) {
+			Logger::log("GENERIC", "OBJECT", std::to_string(r->serialization));
+		}
 		this->addComponent(list.at(i));
 	}
 }

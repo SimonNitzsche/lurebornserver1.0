@@ -444,6 +444,7 @@ bool Db::TableExists(const SQDB_CHAR* tableName)
 
 Statement Db::Query(const SQDB_CHAR* queryStr)
 {
+	const SQDB_CHAR* queryString = queryStr;
 	sqlite3_stmt* stmt = NULL;
 #ifdef SQDB_UTF8
 	const int ret = sqlite3_prepare(m_db, queryStr, -1, &stmt, NULL);

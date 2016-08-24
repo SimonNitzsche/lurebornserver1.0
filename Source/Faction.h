@@ -7,10 +7,19 @@
 // This is the FactionID enum that contains faction
 // names and values
 enum FactionId : unsigned short {
-	SENTINAL = 0,
+	NO_FACTION = -1,
 	ASSEMBLY,
+	VENTURE_LEAGUE,
 	PARADOX,
-	VENTURE_LEAGUE
+	SENTINEL,
+};
+
+//The mission wich you get after choosing a faction (This one sets your faction clientside)
+enum FactionMission : unsigned short {
+	FACTIONMIS_ASSEMBLY = 588,
+	FACTIONMIS_VENTURE,
+	FACTIONMIS_PARADOX,
+	FACTIONMIS_SENTINEL
 };
 
 // Prints Faction name

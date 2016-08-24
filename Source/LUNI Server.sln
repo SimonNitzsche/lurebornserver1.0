@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2013 for Windows Desktop
-VisualStudioVersion = 12.0.30110.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LUNI Server", "LUNI Server.vcxproj", "{54E59E9A-E360-472D-ADF3-52C4D117DCFF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LUNIServer", "LUNI Server.vcxproj", "{54E59E9A-E360-472D-ADF3-52C4D117DCFF}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RakNet", "RakNet\RakNet.vcxproj", "{767CEB9F-4C3D-46FC-A225-E0F3800DC29C}"
 EndProject

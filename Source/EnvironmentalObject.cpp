@@ -53,12 +53,12 @@ void EnvironmentalObject::initializeObject(unsigned long lot) {
 	}
 
 	stringstream destructibleComponentStream;
-	destructibleComponentStream << "SELECT `component_id` FROM `ComponentsRegistry` WHERE `id` = " << lot << " AND `component_type `= 7;";
+	destructibleComponentStream << "SELECT `component_id` FROM `ComponentsRegistry` WHERE `id` = " << lot << " AND `component_type` = 7;";
 
 	sqdb::Statement destructibleComponentStatement = SQLiteDatabase::Query("cdclient.sqlite", destructibleComponentStream.str());
 
-	//if (destructibleComponentStatement.Next() == true) {
-	if (true) {
+	if (destructibleComponentStatement.Next()) {
+	//if (true) {
 		int component_id = destructibleComponentStatement.GetField(0).GetInt();
 
 		this->isDestructible = true;
@@ -112,8 +112,11 @@ void EnvironmentalObject::initializeObject(unsigned long lot) {
 	}
 }
 SimplePhysicsComponent *EnvironmentalObject::getSimplePhysicsComponent(){ return (SimplePhysicsComponent *)this->getComponent(3); }
+PhantomPhysicsComponent * EnvironmentalObject::getPhantomPhysicsComponent() { return (PhantomPhysicsComponent *)this->getComponent(40); }
 DestructibleComponent *EnvironmentalObject::getDestructibleComponent(){ return (DestructibleComponent *)this->getComponent(7); }
 ScriptComponent *EnvironmentalObject::getScriptComponent(){ if (isScriptAdded){ return (ScriptComponent *)this->getComponent(5); } else { return NULL; } }
 RenderComponent *EnvironmentalObject::getRenderComponent(){ return (RenderComponent *)this->getComponent(2); }
 
-
+long long EnvironmentalObject::getObjectID() {
+	return this->objid;
+}

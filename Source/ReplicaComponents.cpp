@@ -858,39 +858,39 @@ InventoryComponent::InventoryComponent(){
 InventoryComponent::~InventoryComponent(){
 
 }
-void InventoryComponent::writeToPacket(RakNet::BitStream *packet, REPLICA_PACKET_TYPE packetType){
+void InventoryComponent::writeToPacket(RakNet::BitStream *packet, REPLICA_PACKET_TYPE packetType) {
 	unsigned long size = this->equipment.size();
 	bool hasEquipment = true; //(size > 0);
 	packet->Write(hasEquipment);
-	if (hasEquipment){
+	if (hasEquipment) {
 		packet->Write(size);
 		//std::cout << "[WORLD] EQUIPMENT COUNT: " << size << std::endl;
-		for (unsigned long k = 0; k < size; k++){
+		for (unsigned long k = 0; k < size; k++) {
 			COMPONENT17_EQUIPMENT eq = equipment.at(k);
 			packet->Write(eq.objid);
 			packet->Write(eq.lot);
 			packet->Write(eq.d3 > 0);
-			if (eq.d3 > 0){
+			if (eq.d3 > 0) {
 				packet->Write(eq.d3);
 			}
 			packet->Write(eq.d4 > 0);
-			if (eq.d4 > 0){
+			if (eq.d4 > 0) {
 				packet->Write(eq.d4);
 			}
 			packet->Write(eq.slot > 0);
-			if (eq.slot > 0){
+			if (eq.slot > 0) {
 				packet->Write(eq.slot);
 			}
 			packet->Write(eq.d6 > 0);
-			if (eq.d6 > 0){
+			if (eq.d6 > 0) {
 				packet->Write(eq.d6);
 			}
 			unsigned long s = eq.d7.size();
 			bool s0 = (s > 0);
 			packet->Write(s0);
-			if (s0){
+			if (s0) {
 				packet->Write(s);
-				for (unsigned long i = 0; i < s; i++){
+				for (unsigned long i = 0; i < s; i++) {
 					packet->Write(eq.d7.at(i));
 				}
 			}
@@ -899,7 +899,7 @@ void InventoryComponent::writeToPacket(RakNet::BitStream *packet, REPLICA_PACKET
 	}
 	bool f2 = (this->data2 >= 0);
 	packet->Write(f2);
-	if (f2){
+	if (f2) {
 		packet->Write(this->data2); //may be a count
 	}
 }

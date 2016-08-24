@@ -169,3 +169,4 @@ bool NPCObject::didAddInventory(){ return this->isInventoryAdded; }
 bool NPCObject::didAddVendorComponent(){ return this->isVendor; }
 bool NPCObject::didAddScript(){ return this->isScriptAdded; }
 bool NPCObject::didAddSkill(){ return this->isSkillAdded; }
+long long NPCObject::getObjectID() { return this->objid; }

@@ -1,20 +1,22 @@
 #include "InventoryDB.h"
 #include "Database.h"
 #include "Logger.h"
+#include "ObjectID.h"
+#include "ReplicaObject.h"
 
 #include <sstream>
 
-void InventoryTable::updateSlotOfItem(long long objid, long long charid, unsigned long newslot){
+void InventoryTable::updateSlotOfItem(long long objid, long long charid, unsigned long newslot) {
 	std::stringstream oi;
 	oi << "UPDATE `inventory` SET `slot` = '" << newslot << "' WHERE `object` = " << objid << ";";
 	Database::Query(oi.str());
 }
 
-bool InventoryTable::moveItemToSlot(long long objid, long long charid, unsigned long slot){
+bool InventoryTable::moveItemToSlot(long long objid, long long charid, unsigned long slot) {
 	unsigned long oldslot = InventoryTable::getSlotFromItem(objid, charid);
-	if (oldslot != ~((unsigned long)0)){
+	if (oldslot != ~((unsigned long)0)) {
 		long long ot_objid = InventoryTable::getItemFromSlot(charid, slot);
-		if (ot_objid > -1){
+		if (ot_objid > -1) {
 			InventoryTable::updateSlotOfItem(ot_objid, charid, oldslot);
 		}
 		InventoryTable::updateSlotOfItem(objid, charid, slot);
@@ -22,75 +24,78 @@ bool InventoryTable::moveItemToSlot(long long objid, long long charid, unsigned 
 	return true;
 }
 
-unsigned long InventoryTable::getSlotFromItem(long long objid, long long charid){
+unsigned long InventoryTable::getSlotFromItem(long long objid, long long charid) {
 	std::stringstream sq;
 	sq << "SELECT `slot` FROM `inventory` WHERE `owner` = '" << charid << "' AND `object` = '" << objid << "';";
 	auto sqr = Database::Query(sq.str());
-	if (mysql_num_rows(sqr) > 0){
+	if (mysql_num_rows(sqr) > 0) {
 		auto row = mysql_fetch_row(sqr);
 		unsigned long slot = std::stoi(row[0]);
 		return slot;
 	}
-	else{
+	else {
 		return ~((unsigned long)0); //return max as negative value
 	}
 }
 
-long long InventoryTable::getItemFromSlot(long long charid, unsigned long slot){
+long long InventoryTable::getItemFromSlot(long long charid, unsigned long slot) {
 	std::stringstream iq;
 	iq << "SELECT `object` FROM `inventory` WHERE `owner` = '" << charid << "' AND `slot` = '" << slot << "';";
 	auto iqr = Database::Query(iq.str());
-	if (mysql_num_rows(iqr) > 0){
+	if (mysql_num_rows(iqr) > 0) {
 		auto ir = mysql_fetch_row(iqr);
 		long long objid = std::stoll(ir[0]);
 		return objid;
 	}
-	else{
+	else {
 		return -1; //-1 as return value
 	}
 }
 
-void InventoryTable::deleteInventory(long long charid){
+void InventoryTable::deleteInventory(long long charid) {
 	std::stringstream eqqr;
 	eqqr << "DELETE FROM `inventory` WHERE `owner`='" << charid << "';";
 	Database::Query(eqqr.str());
 }
 
-void InventoryTable::insertItem(long long charid, long long objid, unsigned long qnt, unsigned long slot, bool linked){
+void InventoryTable::insertItem(long long charid, unsigned long objTemplate, long long objid, unsigned long qnt, unsigned long slot, bool linked, long tab) {
 	std::stringstream str;
-	str << "INSERT INTO `inventory` (`owner`, `object`, `qnt`, `slot`, `linked`) VALUES('" << charid << "', '" << objid << "', '" << std::to_string(qnt) << "', '" << std::to_string(slot) << "', '";
+	str << "INSERT INTO `inventory` (`owner`, `object`, `qnt`, `slot`, `linked`, `tab`, `objectid`) VALUES(" << charid << ", " << objTemplate << ", " << std::to_string(qnt) << ", " << std::to_string(slot) << ", ";
 	if (linked) str << "1"; else str << "0";
-	str << "');";
+	str << ", " << tab << ", " << objid << ");";
 	Database::Query(str.str());
 }
 
-void InventoryTable::deleteItem(long long charid, long long objid){
+void InventoryTable::deleteItem(long long charid, long long objid) {
 	Database::Query("DELETE FROM `inventory` WHERE `owner` = '" + std::to_string(charid) + "' AND `object` = '" + std::to_string(objid) + "';");
 }
 
-std::vector<InventoryItem> InventoryTable::getItems(long long charid){
-	std::string qr = "SELECT `object`, `qnt`, `slot`, `linked` FROM `inventory` WHERE `owner` = " + std::to_string(charid);
+
+std::vector<InventoryItem> InventoryTable::getItems(long long charid) {
+	std::string qr = "SELECT `object`, `qnt`, `slot`, `linked`, `tab`, `objectid` FROM `inventory` WHERE `owner` = " + std::to_string(charid);
 	auto qrr = Database::Query(qr);
 	unsigned long long num = mysql_num_rows(qrr);
 	std::vector<InventoryItem> items;
-	items.reserve((int) num);
+	items.reserve((int)num);
 	MYSQL_ROW row;
 	while (row = mysql_fetch_row(qrr)) {
 		InventoryItem i;
-		i.objid = std::stoll(row[0]);
+		i.lot = std::stol(row[0]);
 		i.qnt = std::stoi(row[1]);
 		i.slot = std::stol(row[2]);
+		i.tab = std::stol(row[4]);
+		i.objid = std::stoll(row[5]);
 		if (std::stoi(row[3]) == 1) i.linked = true;
 		items.push_back(i);
 	}
 	return items;
 }
 
-std::string InventoryTable::getName(){
+std::string InventoryTable::getName() {
 	return "inventory";
 }
 
-void InventoryTable::mapTable(std::unordered_map<std::string, compare<ColData *> *> * data){
+void InventoryTable::mapTable(std::unordered_map<std::string, compare<ColData *> *> * data) {
 	Database::addColToMap(data, "id", new ColData("int(11)", false, "PRI", "NULL", "auto_increment"));
 	Database::addColToMap(data, "owner", new ColData("bigint(64)", false, "", "NULL", ""));
 	Database::addColToMap(data, "object", new ColData("bigint(64)", false, "", "NULL", ""));
@@ -99,15 +104,15 @@ void InventoryTable::mapTable(std::unordered_map<std::string, compare<ColData *>
 	Database::addColToMap(data, "linked", new ColData("tinyint(1)", false, "", "0", ""));
 }
 
-long ObjectsTable::getTemplateOfItem(long long objid){
+long ObjectsTable::getTemplateOfItem(long long objid) {
 	std::stringstream str;
-	str << "SELECT `template` FROM `objects` WHERE `objectid` = '" << objid << "';";
+	str << "SELECT `object` FROM `inventory` WHERE `objectid` = '" << objid << "';";
 	auto qr = Database::Query(str.str());
-	if (qr == NULL){
+	if (qr == NULL) {
 		return -1;
 		Logger::logError("IVDB", "MYSQL", "getting LOT", mysql_error(Database::getConnection()));
 	}
-	if (mysql_num_rows(qr) > 0){
+	if (mysql_num_rows(qr) > 0) {
 		auto row = mysql_fetch_row(qr);
 		long lot = std::stol(row[0]);
 		return lot;
@@ -115,18 +120,19 @@ long ObjectsTable::getTemplateOfItem(long long objid){
 	return -1;
 }
 
-ObjectInfo ObjectsTable::getItemInfo(long long objid){
+ObjectInfo ObjectsTable::getItemInfo(long long objid) {
 	std::stringstream str;
 	str << "SELECT `template`, `spawnid` FROM `objects` WHERE `objectid` = '" << objid << "';";
 	auto qr = Database::Query(str.str());
-	if (qr == NULL){
-		
-	}else{
-		if (mysql_num_rows(qr) > 0){
+	if (qr == NULL) {
+
+	}
+	else {
+		if (mysql_num_rows(qr) > 0) {
 			auto row = mysql_fetch_row(qr);
 			long lot = std::stol(row[0]);
 			long long spawnid = -1;
-			if (row[1] != NULL){
+			if (row[1] != NULL) {
 				spawnid = std::stoll(row[1]);
 			}
 			return ObjectInfo(objid, lot, spawnid);
@@ -135,7 +141,7 @@ ObjectInfo ObjectsTable::getItemInfo(long long objid){
 	return ObjectInfo(0, 0, 0);
 }
 
-long long ObjectsTable::createObject(long lot){
+long long ObjectsTable::createObject(long lot) {
 	std::stringstream str;
 	str << "INSERT INTO `luni`.`objects` (`objectid`, `template`) VALUES(NULL, '" << lot << "');";
 	Database::Query(str.str());
@@ -143,29 +149,49 @@ long long ObjectsTable::createObject(long lot){
 	return objid;
 }
 
-void ObjectsTable::deleteObject(long long objid){
+void ObjectsTable::deleteObject(long long objid) {
 	Database::Query("DELETE FROM `objects` WHERE `objectid` = '" + std::to_string(objid) + "';");
 }
 
-RocketInfo ObjectsTable::getRocketInfo(long long objid){
+RocketInfo ObjectsTable::getRocketInfo(long long objid) {
 	std::stringstream str;
-	str << "SELECT `nose_cone_template`, `cockpit_template`, `engine_template` FROM `objects` WHERE `objectid` = '" << objid << "';";
+	str << "SELECT `nose_cone_template`, `cockpit_template`, `engine_template` FROM `rockets` WHERE `objectid` = '" << objid << "';";
 	auto qr = Database::Query(str.str());
-	if (mysql_num_rows(qr) > 0){
+	if (mysql_num_rows(qr) > 0) {
 		auto row = mysql_fetch_row(qr);
 		long cone = std::stol(row[0]);
 		long cockpit = std::stol(row[1]);
 		long engine = std::stol(row[2]);
 		return RocketInfo(cone, cockpit, engine);
 	}
-	return RocketInfo(0,0,0);
+	return RocketInfo(0, 0, 0);
 }
 
-std::string ObjectsTable::getName(){
+CarInfo ObjectsTable::getCarInfo(long long objid) {
+	std::stringstream str;
+	str << "SELECT `front_bumper_template`, `engine_panel_template`, `side_panel_template`, `rear_panel_template`, `rear_bumper_template`, `chassis_template`, `wheels_template` FROM `cars` WHERE `objectid` = '" << objid << "';";
+	auto qr = Database::Query(str.str());
+	if (mysql_num_rows(qr) > 0) {
+		auto row = mysql_fetch_row(qr);
+		long frontB = std::stol(row[0]);
+		long engineB = std::stol(row[1]);
+		long sideP = std::stol(row[2]);
+		long rearP = std::stol(row[3]);
+		long rearB = std::stol(row[4]);
+		long chassis = std::stol(row[5]);
+		long wheels = std::stol(row[6]);
+		return CarInfo(frontB, engineB, sideP, rearP, rearB, wheels, chassis);
+	}
+	else {
+		return CarInfo(0, 0, 0, 0, 0, 0, 0);
+	}
+}
+
+std::string ObjectsTable::getName() {
 	return "objects";
 }
 
-void ObjectsTable::mapTable(std::unordered_map<std::string, compare<ColData *> *> * data){
+void ObjectsTable::mapTable(std::unordered_map<std::string, compare<ColData *> *> * data) {
 	Database::addColToMap(data, "objectid", new ColData("bigint(64)", false, "PRI", "NULL", "auto_increment"));
 	Database::addColToMap(data, "template", new ColData("int(32) unsigned", false, "", "NULL", ""));
 	Database::addColToMap(data, "spawnid", new ColData("bigint(20)", true, "", "NULL", ""));
@@ -174,13 +200,13 @@ void ObjectsTable::mapTable(std::unordered_map<std::string, compare<ColData *> *
 	Database::addColToMap(data, "engine_template", new ColData("int(11)", true, "", "NULL", ""));
 }
 
-std::vector<long long> EquipmentTable::getItems(long long charid){
+std::vector<long long> EquipmentTable::getItems(long long charid) {
 	auto qr = Database::Query("SELECT `object` FROM `equipment` WHERE `owner` = '" + std::to_string(charid) + "';");
-	
+
 	unsigned int numrows = (uint)mysql_num_rows(qr);
 	std::vector<long long> items;
 	items.reserve(numrows);
-	for (unsigned int k = 0; k < numrows; k++){
+	for (unsigned int k = 0; k < numrows; k++) {
 		auto ftc = mysql_fetch_row(qr);
 		long long itemid = std::stoll(ftc[0]);
 		items.push_back(itemid);
@@ -188,48 +214,31 @@ std::vector<long long> EquipmentTable::getItems(long long charid){
 	return items;
 }
 
-void EquipmentTable::equipItem(long long charid, long long objid, unsigned long itemType){
+void EquipmentTable::equipItem(long long charid, long long objid, unsigned long itemType) {
 	std::stringstream eqqr;
-	eqqr << "INSERT INTO `equipment` (`id`, `owner`, `object`, `itemType`) VALUES(NULL, '" << charid << "', '" << objid << "', '" << itemType << "');";
+
+	eqqr << "INSERT INTO `equipment` (`id`, `owner`, `object`) VALUES(NULL, '" << charid << "', '" << objid << "');";
 	Database::Query(eqqr.str());
 }
 
-
-void EquipmentTable::unequipItem(long long charid, long long objid){
+void EquipmentTable::unequipItem(long long charid, long long objid) {
 	std::stringstream eqqr;
-	eqqr << "DELETE FROM `equipment` WHERE `owner`='" << charid << "' AND `object`='" << objid << "';";
+	eqqr << "DELETE FROM `luni`.`equipment` WHERE `owner`='" << charid << "' AND `object`='" << objid << "';";
 	Database::Query(eqqr.str());
 }
 
-void EquipmentTable::deleteEquipment(long long charid){
+void EquipmentTable::deleteEquipment(long long charid) {
 	std::stringstream eqqr;
 	eqqr << "DELETE FROM `equipment` WHERE `owner`='" << charid << "';";
 	Database::Query(eqqr.str());
 }
 
-std::string EquipmentTable::getName(){
+std::string EquipmentTable::getName() {
 	return "equipment";
 }
 
-void EquipmentTable::mapTable(std::unordered_map<std::string, compare<ColData *> *> * data){
+void EquipmentTable::mapTable(std::unordered_map<std::string, compare<ColData *> *> * data) {
 	Database::addColToMap(data, "id", new ColData("int(11)", false, "PRI", "NULL", "auto_increment"));
 	Database::addColToMap(data, "owner", new ColData("bigint(20)", false, "", "NULL", ""));
 	Database::addColToMap(data, "object", new ColData("bigint(20)", false, "", "NULL", ""));
-}
-
-long long EquipmentTable::getFromItemType(long long charid, unsigned itemType) {
-	std::stringstream str;
-	str << "SELECT `object` FROM `equipment` WHERE `owner` = '" << charid << "' AND `itemType` = '" << itemType << "';";
-	auto qr = Database::Query(str.str());
-	if (qr == NULL){
-		return -1;
-	}
-	else{
-		if (mysql_num_rows(qr) > 0){
-			auto row = mysql_fetch_row(qr);
-			return std::stoll(row[0]);
-		}
-		else
-			return -1;
-	}
 }

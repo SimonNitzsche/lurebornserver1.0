@@ -15,6 +15,7 @@
 #include "Logger.h"
 #include "Packet.h"
 #include "Characters.h"
+#include "worldLoop.h"
 
 #include <map>
 #include <sstream>
@@ -551,6 +552,30 @@ void GameMSG::removeSkill(long long charid, unsigned long skillid) {
 	}
 }
 
+void GameMSG::SetStunned(long long charid, std::string StateChangeType, bool cantAttack, bool cantAttackOCWA, bool cantEquip, bool cantEquipOCWA,
+						 bool cantInteract, bool cantInteractOCWA, bool cantJump, bool cantJumpOCWA, bool cantMove, bool cantMoveOCWA, bool cantTurn, 
+						 bool cantTurnOCWA, bool cantUseItem, bool cantUseItemOCWA, bool dontTerminateInteract, bool bIgnoreImmunity) {
+	RakNet::BitStream * bs = WorldServerPackets::InitGameMessage(charid, SET_STUNNED);
+	bs->Write((long)1);
+	bs->Write(cantAttack);
+	bs->Write(cantAttackOCWA);
+	bs->Write(cantEquip);
+	bs->Write(cantEquipOCWA);
+	bs->Write(cantInteract);
+	bs->Write(cantInteractOCWA);
+	bs->Write(cantJump);
+	bs->Write(cantJumpOCWA);
+	bs->Write(cantMove);
+	bs->Write(cantMoveOCWA);
+	bs->Write(cantTurn);
+	bs->Write(cantTurnOCWA);
+	bs->Write(cantUseItem);
+	bs->Write(cantUseItemOCWA);
+	bs->Write(dontTerminateInteract);
+	bs->Write(bIgnoreImmunity);
+	WorldServer::sendPacket(bs, SessionsTable::findCharacter(charid));
+}
+
 void GameMSG::resurrect(long long charid, bool immediate)
 {
 	SessionInfo s = SessionsTable::getClientSession(SessionsTable::findCharacter(charid));
@@ -569,22 +594,7 @@ void GameMSG::resurrect(long long charid, bool immediate)
 			WorldServer::sendPacket(bs, sessionsz.at(k).addr);
 		}
 		
-		PlayerObject *player = (PlayerObject*) ObjectsManager::getObjectByID(s.activeCharId);
-		ObjectsManager::clientJoinWorld(player, s.addr);
-		Session::enter(s.activeCharId, s.zone);
-
-		bs = WorldServerPackets::InitGameMessage(s.activeCharId, REBUILD_NOTIFY_STATE);
-		bs->Write(PHASE_INWORLD);
-		bs->Write(t->phase);
-		bs->Write(s.activeCharId);
-
-		for (unsigned int k = 0; k < sessionsz.size(); k++) {
-			WorldServer::sendPacket(bs, sessionsz.at(k).addr);
-		}
-
-		bs = WorldServerPackets::InitGameMessage(s.activeCharId, SET_USER_CTRL_COMP_PAUSE);
-		bs->Write(false);
-		WorldServer::sendPacket(bs, s.addr);
+		SetStunned(s.accountid, "POP");
 	}
 }
 
@@ -614,7 +624,7 @@ void GameMSG::knockback(long long charid, long long casterid, COMPONENT1_POSITIO
 
 void GameMSG::addItemToInventoryClientSync(long long charid, long long objectID, long lotTemplate, long slotid, bool showFlyingLoot) {
 	SystemAddress addr = SessionsTable::findCharacter(charid);
-
+	/*
 	RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(charid, ADD_ITEM_TO_INVENTORY_CLIENT_SYNC);
 	
 	bs->Write(true);
@@ -638,7 +648,28 @@ void GameMSG::addItemToInventoryClientSync(long long charid, long long objectID,
 	bs->Write(showFlyingLoot);
 	bs->Write(slotid);
 
-	WorldServer::sendPacket(bs, addr);
+	WorldServer::sendPacket(bs, addr);*/
+	
+	RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(charid, ADD_ITEM_TO_INVENTORY_CLIENT_SYNC);
+	ef->Write((bool)false);
+	ef->Write((bool)false);
+	ef->Write((bool)false);
+	ef->Write((bool)false);
+	ef->Write((unsigned long)0);
+	ef->Write((unsigned long)lotTemplate);
+	ef->Write((bool)false);
+	ef->Write((bool)false);
+	ef->Write((bool)true);
+	ef->Write((unsigned long)lotTemplate);
+	ef->Write((bool)true);
+	ef->Write((unsigned long)0);
+	ef->Write(objectID);
+	ef->Write((float)0);
+	ef->Write((float)0);
+	ef->Write((float)0);
+	ef->Write((bool)true);
+	ef->Write((unsigned long)slotid);
+	WorldServer::sendPacket(ef, addr);
 }
 
 void GameMSG::displayMessageBox(long long charid, long long callbackClient, std::wstring identifier, std::wstring text, std::wstring userData) {
@@ -756,6 +787,58 @@ void GameMSG::EchoSyncSkill(SystemAddress &systemAddress, std::string sBitStream
 		WorldServer::sendPacket(bs, systemAddress);
 	}
 
+}
+
+bool handleObjectInteract(ObjectInformation obj, SystemAddress &systemAddress) {
+	if (obj.type != ObjectType::NONE) {
+		switch (obj.type)
+		{
+		case ObjectType::LaunchPad:
+		{
+			ZoneId zone = getLaunchPadTarget(obj);
+			if (zone != ZoneId::NO_ZONE && zone != ZoneId::KEELHAUL_CANYON) {
+				SessionInfo s = SessionsTable::getClientSession(systemAddress);
+
+				RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(s.activeCharId, GameMessage::FIRE_EVENT_CLIENT_SIDE);
+				bs->Write(L"RocketEquipped");
+				bs->Write(0); //rocketObjID
+				bs->Write(0);
+				bs->Write(-1);
+				bs->Write(s.activeCharId);
+				WorldServer::sendPacket(bs, systemAddress);
+				/*COMPONENT1_POSITION pos = getZoneSpawnPoint(zone, static_cast<ZoneId>(s.zone));
+				bool flag = Worlds::loadWorld(systemAddress, zone, pos, 0, 0);
+				if (flag) {
+					Session::leave(s.activeCharId);
+
+					WorldPlace place;
+					place.zoneID = zone;
+					place.mapClone = 0;
+					place.mapInstance = 0;
+					place.x = pos.x;
+					place.y = pos.y;
+					place.z = pos.z;
+					CharactersTable::setCharactersPlace(s.activeCharId, place);
+
+					ObjectsManager::clientLeaveWorld(s.activeCharId, systemAddress);
+					//usr->DestructPlayer();
+				}*/
+			}
+		}
+		break;
+		case ObjectType::PostBox:
+		{
+			SessionInfo s = SessionsTable::getClientSession(systemAddress);
+			//Chat::sendMythranInfo(usr->GetCurrentCharacter()->charobjid, "We are sorry to inform you the Mail system isn't working yet!", "Our deepest apologies");
+			Mail::openMailbox(s.activeCharId);
+		}
+		break;
+		default:
+			return false;
+			break;
+		}
+	}
+	return true;
 }
 
 /*TO PARSE ALL GAME MESSAGES*/
@@ -885,9 +968,41 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 		} break;
 		case REQUEST_USE: {
 
-			//read packet
+			//Interaction
+			//There has to be a flag somewhere in here, with the speedchat messages I found out that it is offset by one bit.
+			//Normally all bits until there are 0, i'll check both sides to see if anything happens -> where the flag is
+			bool flag1;
+			data->Read(flag1);
+			data->SetReadOffset(data->GetReadOffset() - 1);
+			unsigned long long something3;
+			data->Read(something3);
+			bool flag;
+			data->Read(flag);
+			unsigned long long object;
+			data->Read(object);
 
-			//response
+			ObjectInformation o = getObjectInformation(object);
+			Logger::log("WRLD", "INTERACT", getObjectDescription(o, object));
+			
+			Logger::log("WRLD", "INTERACT", std::to_string(flag1));
+			Logger::log("WRLD", "INTERACT", std::to_string(something3));
+			Logger::log("WRLD", "INTERACT", std::to_string(flag));
+			Logger::log("WRLD", "INTERACT", std::to_string(object));
+
+
+			SessionInfo s = SessionsTable::getClientSession(systemAddress);
+			PlayerObject *player = (PlayerObject *)ObjectsManager::getObjectByID(s.activeCharId);
+
+			bool b;
+			for (unsigned char a = 0; a < 7; a++) data->Read(b);
+			if (o.type == ObjectType::NONE) {
+				//logic here needs to be redone
+			}
+			else {
+				handleObjectInteract(o, systemAddress);
+			}
+
+			break;
 
 		} break;
 		case CANCEL_MISSION: {
@@ -987,12 +1102,27 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 			}
 			else {
 				if (script == L"achieve") {
-					die(s.activeCharId, true, true, 0.0F, L"WorldDeathWater", 0.0F, 0.0F, 0.0F, s.activeCharId, s.activeCharId);
+					//die(s.activeCharId, true, true, 0.0F, L"big-shark-death", 0.0F, 0.0F, 0.0F, s.activeCharId, s.activeCharId);
+					RakNet::BitStream * bs = WorldServerPackets::InitGameMessage(object, FIRE_EVENT_CLIENT_SIDE);
+					bs->Write(L"achieve");
+					bs->Write(object);
+					bs->Write(0);
+					bs->Write(-1);
+					bs->Write(object);
+					WorldServer::sendPacket(bs, systemAddress);
 				}
 				else {
-					std::stringstream ss;
-					ss << script.c_str();
-					Logger::log("GM", "PCKT", "New Fire Event Server Side: " + ss.str());
+					if (script == L"01536C38") { //Appears when mission to select faction gear is active -> No idea what this is
+						Logger::log("GM", "UKNW", std::to_string(object));
+						Logger::log("GM", "UKNW", std::to_string(dat));
+					}
+					else {
+						std::stringstream ss;
+						ss << script.c_str();
+						Logger::log("GM", "PCKT", "New Fire Event Server Side: " + ss.str());
+						Logger::log("GM", "UKNW", std::to_string(object));
+						Logger::log("GM", "UKNW", std::to_string(dat));
+					}
 				}
 			}
 
@@ -1089,5 +1219,4 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 			//response
 		} break;
 	}
-
 }
