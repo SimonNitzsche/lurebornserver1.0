@@ -2,6 +2,8 @@
 #include "World.h"
 #include "Common.h"
 #include "ReplicaComponents.h"
+#include "Vector3.h"
+#include "Vector4.h"
 
 #include <string>
 
@@ -218,6 +220,8 @@ enum GameMessage : long {
 	TOGGLE_SENDING_POSITION_UPDATES = 0x048e,
 	PLACE_PROPERTY_MODEL = 0x0492,
 	UI_MESSAGE_SERVER_TO_SINGLE_CLIENT = 0x04a0,
+	HELPMENU_REPORT = 0x04ae,
+	HELPMENU_SMASH = 0x04b2,
 	UNCAST_SKILL = 0x04b6,
 	FIRE_EVENT_CLIENT_SIDE = 0x04bd,
 	CHANGE_OBJECT_WORLD_STATE = 0x004c7,
@@ -346,13 +350,20 @@ public:
 	static void displayZoneSummary(long long charid, bool isProperty, bool isZoneStart);
 	static void sendLevelUpMessage(long long charid);
 	
-	//jonny made this, dont know what this is. Not documented
+	//executes skill on receiver
 	static void castActiveSkill(long long charid, unsigned long someNumber);
 
 	static void verifyAck(SystemAddress & systemAddress, std::string sBitStream, unsigned long uiHandle, bool bDifferent);
 
 	static void EchoSyncSkill(SystemAddress & systemAddress, std::string sBitStream, unsigned long uiBehaviorHandle, unsigned long uiSkillHandle, bool bDone);
+
+	static void EchoStartSkill(SystemAddress & systemAddress, bool bUsedMouse, float fCasterLatency, int iCastType, NiPoint3 lastClickedPos, long long optionalOriginatorID, long long optionalTargetID, NiQuaternion originatorRot, std::string sBitStream, unsigned long skillID, unsigned long uiSkillHandle);
 	
+	static void equipItem(long long charid, long long objid);
+	static void unequipItem(long long charid, long long objid);
+
+	static void OfferMission(int misID, SystemAddress systemAddress, long long npc);
+
 	//parses the game messages
 	static void parseGameMSG(unsigned short messageID, RakNet::BitStream *data, SystemAddress &systemAddress);
 };

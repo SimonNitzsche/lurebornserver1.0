@@ -1,0 +1,15 @@
+/deleteinven all
+/gmadditem 6849
+/gmadditem 6882
+/gmadditem 2208
+/gmadditem 6796
+/gmadditem 6797
+/gmadditem 6781
+/gmadditem 6782
+/gmadditem 6973
+/gmadditem 6972
+/gmadditem 6887
+/gmadditem 6924
+/gmadditem 6931
+/gmadditem 2635
+/gmadditem 6795

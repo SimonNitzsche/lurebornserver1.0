@@ -31,6 +31,7 @@ void SendCharPacket(RakPeerInterface *rakServer, SystemAddress& systemAddress, u
 	for (int k = 0; k < charactersLength; k++){
 		if (chars.at(k) == frontCharId){
 			frontChar = k;
+			break;
 		}
 	}
 
@@ -324,15 +325,13 @@ unsigned long FindCharPantsID(unsigned long pantsColor) {
 
 void GetCharSpecialItems(long long objectID, RakNet::BitStream *bitStream) {
 	std::vector<long long> items = EquipmentTable::getItems(objectID);
-	unsigned short numrows = items.size();
-	bitStream->Write(numrows);
-	for (unsigned short k = 0; k < numrows; k++){
-		long lot = ObjectsTable::getTemplateOfItem(items.at(k));
+	for each(long long itm in items) {
+		long lot = ObjectsTable::getTemplateOfItem(itm);
 		if (lot == -1) lot = 0;
 		bitStream->Write(lot);
-		Logger::log("CHAR", "PACKETS", "equipped item: " + std::to_string(items.at(k)), LOG_ALL);
+		Logger::log("CHAR", "PACKETS", "equipped item: " + std::to_string(itm), LOG_ALL);
 	}
-	Logger::log("CHAR", "PACKETS", "Character has " + std::to_string(numrows) + " items equipped", LOG_ALL);
+	Logger::log("CHAR", "PACKETS", "Character has " + std::to_string(items.size()) + " items equipped", LOG_ALL);
 }
 
 string GetUnapprovedUsername(unsigned long firstLine, unsigned long middleLine, unsigned long lastLine) {

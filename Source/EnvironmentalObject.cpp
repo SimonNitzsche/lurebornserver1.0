@@ -2,6 +2,7 @@
 #include "Worlds.h"
 #include "PlayerObject.h"
 #include "SpawnerObject.h"
+#include "StaticObjectsDB.h"
 
 #include "ObjectID.h"
 
@@ -19,7 +20,8 @@
 using namespace std;
 
 EnvironmentalObject::EnvironmentalObject(unsigned long lot, unsigned long currentZone) {
-	Logger::log("REPL", "ENV", "Initializing Environmental Object");
+	if (StaticObjectsDB::initDone)
+		Logger::log("REPL", "ENV", "Initializing Environmental Object");
 
 	this->zoneID = currentZone;
 	initializeObject(lot);

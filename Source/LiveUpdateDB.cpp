@@ -1,6 +1,5 @@
 #include "LiveUpdateDB.h"
 #include "Logger.h"
-#include "Database.h"
 #include <sstream>
 #include <stdlib.h>
 

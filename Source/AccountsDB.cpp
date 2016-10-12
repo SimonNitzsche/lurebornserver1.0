@@ -395,7 +395,7 @@ SessionInfo SessionsTable::quit(long long charid){
 		return SessionInfo();
 	}
 }
-
+// TODO: Simplify if/else
 SystemAddress SessionsTable::findCharacter(long long charid){
 	std::stringstream str;
 	str << "SELECT `ipaddress` FROM `sessions` WHERE `charid` = '" << std::to_string(charid) << "'";

@@ -324,6 +324,10 @@ void RigidBodyPhantomPhysicsComponent::setRot(COMPONENT20_ROTATION rot){ this->r
 
 #pragma endregion
 
+#pragma region CollectibleComponent (Component 23)
+	
+#pragma endregion
+
 #pragma region VehiclePhysicsComponent (Component 30)
 
 VehiclePhysicsComponent::VehiclePhysicsComponent() {

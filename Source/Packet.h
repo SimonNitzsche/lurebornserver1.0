@@ -49,6 +49,7 @@ namespace PacketTools {
 
 	void printRest(RakNet::BitStream *bs);
 	void printBytes(RakNet::BitStream *bs, unsigned long number);
+	std::string BytesToString(RakNet::BitStream * bs, unsigned long number);
 }
 
 // Create a packet header that is used for almost all server packets

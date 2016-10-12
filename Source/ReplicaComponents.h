@@ -364,6 +364,18 @@ public:
 
 #pragma endregion
 
+#pragma region CollectibleComponent (Component 23)
+
+class CollectibleComponent : public ReplicaComponent {
+private:
+	unsigned long LOTemplate;
+public:
+	//unsigned long getTemplate();
+	//void setTemplate(unsigned long lot);
+};
+
+#pragma endregion
+
 #pragma region VehiclePhysicsComponent (Component 30)
 
 class VehiclePhysicsComponent : public ReplicaComponent {

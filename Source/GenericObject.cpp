@@ -14,6 +14,7 @@
 
 #include "SQLite\sqdb.h"
 #include "SQLiteDatabase.h"
+#include "StaticObjectsDB.h"
 
 #include <map>
 #include <sstream>
@@ -23,7 +24,8 @@ using namespace std;
 bool outputAll = false; //Prints everything to the console
 
 GenericObject::GenericObject(unsigned long lot, unsigned long currentZone, COMPONENT1_POSITION pos, COMPONENT1_ROTATION rot, COMPONENT1_VELOCITY vel, COMPONENT1_VELOCITY_ANGULAR vel_ang) {
-	Logger::log("REPL", "OBJ", "Initializing New Generic Object");
+	if(StaticObjectsDB::initDone)
+		Logger::log("REPL", "OBJ", "Initializing New Generic Object");
 
 	this->zoneID = currentZone;
 	initializeObject(lot, pos, rot, vel, vel_ang);
@@ -111,6 +113,9 @@ void GenericObject::initializeObject(unsigned long lot, COMPONENT1_POSITION pos,
 					long health = dataStatement.GetField(1).GetInt();
 					long imagination = dataStatement.GetField(2).GetInt();
 					long armor = dataStatement.GetField(3).GetInt();
+
+					if (lot == 4894 || lot == 7844) //explosive Crates from Gnarled Forest
+						health = 9999;
 
 					COMPONENT7_DATA4 d4 = COMPONENT7_DATA4();
 					d4.health = health;

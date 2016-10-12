@@ -59,8 +59,9 @@ private:
 public:
 	static bool moveItemToSlot(long long objid, long long charid, unsigned long slot);
 	static unsigned long getSlotFromItem(long long objid, long long charid);
-	static long long getItemFromSlot(long long charid, unsigned long slot);
+	static long long getItemFromSlot(long long charid, unsigned long slot, int tab);
 	static void deleteInventory(long long charid);
+	static int getTab(long lot);
 	static void insertItem(long long charid, unsigned long objTemplate, long long objid, unsigned long qnt, unsigned long slot, bool linked=0, long tab=0);
 	static void deleteItem(long long charid, long long objid);
 	static std::vector<InventoryItem> getItems(long long charid);
@@ -98,6 +99,7 @@ public:
 	static void equipItem(long long charid, long long objectid, unsigned long itemType);
 	static void unequipItem(long long charid, long long objectid);
 	static void deleteEquipment(long long charid);
+	static long long getFromItemType(long long charid, unsigned long it);
 
 	std::string getName();
 	void mapTable(std::unordered_map<std::string, compare<ColData *> *> * data);

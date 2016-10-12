@@ -106,7 +106,10 @@
     <ClInclude Include="EnemyObject.h" />
     <ClInclude Include="EnvironmentalObject.h" />
     <ClInclude Include="GenericObject.h" />
+    <ClInclude Include="Interact.h" />
     <ClInclude Include="LootObject.h" />
+    <ClInclude Include="Macro.h" />
+    <ClInclude Include="Mission.h" />
     <ClInclude Include="NPCObject.h" />
     <ClInclude Include="ObjectID.h" />
     <ClInclude Include="SmashableObject.h" />
@@ -130,6 +133,7 @@
     <ClInclude Include="IniReader.h" />
     <ClInclude Include="InventoryDB.h" />
     <ClInclude Include="LDF.h" />
+    <ClCompile Include="Interact.cpp" />
     <ClCompile Include="LiveUpdateDB.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="md5.h" />
@@ -148,6 +152,8 @@
     <ClInclude Include="StaticObjectsDB.h" />
     <ClInclude Include="TimeUtil.h" />
     <ClInclude Include="UtfConverter.h" />
+    <ClInclude Include="Vector3.h" />
+    <ClInclude Include="Vector4.h" />
     <ClInclude Include="WebAPIService.h" />
     <ClInclude Include="World.h" />
     <ClInclude Include="WorldConnection.h" />
@@ -161,6 +167,7 @@
     <ClCompile Include="EnvironmentalObject.cpp" />
     <ClCompile Include="GenericObject.cpp" />
     <ClCompile Include="LootObject.cpp" />
+    <ClCompile Include="Macro.cpp" />
     <ClCompile Include="NPCObject.cpp" />
     <ClCompile Include="ObjectID.cpp" />
     <ClCompile Include="SmashableObject.cpp" />

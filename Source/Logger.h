@@ -25,6 +25,7 @@ class Logger{
 	static std::vector<std::string> logBuffer;
 public:
 	static void log(const std::string& source, const std::string& role, const std::string& message, LogLevels logLevel = LogLevels::LOG_NORMAL);
+	static std::stringstream getLogStream(const std::string & source, const std::string & role);
 	//Log if an error message is present
 	static void logError(const std::string& source, const std::string&role, const std::string& action, const std::string& error);
 	static void mute();

@@ -212,6 +212,27 @@ void PacketTools::printBytes(RakNet::BitStream *bs, unsigned long number){
 	if ((number % 16) != 0) Logger::log("DATA", "", buffer.str(), LOG_DEBUG);
 }
 
+std::string PacketTools::BytesToString(RakNet::BitStream *bs, unsigned long number) {
+	ostringstream buffer;
+	stringstream out;
+	for (unsigned long k = 0; k < number; k++) {
+		unsigned char chr;
+		bs->Read(chr);
+		buffer << setw(2) << hex << setfill('0') << (int)chr;
+		buffer << " ";
+		if ((k + 1) % 16 == 0) {
+			out << buffer.str();
+			buffer.str("");
+			buffer.clear();
+		}
+	}
+	if ((number % 16) != 0)
+		out<< buffer.str();
+	
+	return out.str();
+}
+
+
 // ----- NOTE: THESE SHOULD NOT BE USED RIGHT NOW AS WINDOWS ALREADY WRITES IN LITTLE ENDIAN ----- //
 
 // Swap a unsigned short between little and big endian

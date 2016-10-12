@@ -3,19 +3,22 @@
 #include "Logger.h"
 #include "ObjectID.h"
 #include "ReplicaObject.h"
+#include "CDClientDB.h"
+#include "SQLiteDatabase.h"
 
 #include <sstream>
 
 void InventoryTable::updateSlotOfItem(long long objid, long long charid, unsigned long newslot) {
 	std::stringstream oi;
-	oi << "UPDATE `inventory` SET `slot` = '" << newslot << "' WHERE `object` = " << objid << ";";
+	oi << "UPDATE `inventory` SET `slot` = '" << newslot << "' WHERE `objectid` = " << objid << ";";
 	Database::Query(oi.str());
 }
 
 bool InventoryTable::moveItemToSlot(long long objid, long long charid, unsigned long slot) {
 	unsigned long oldslot = InventoryTable::getSlotFromItem(objid, charid);
 	if (oldslot != ~((unsigned long)0)) {
-		long long ot_objid = InventoryTable::getItemFromSlot(charid, slot);
+		int tab = InventoryTable::getTab(ObjectsTable::getTemplateOfItem(objid));
+		long long ot_objid = InventoryTable::getItemFromSlot(charid, slot, tab);
 		if (ot_objid > -1) {
 			InventoryTable::updateSlotOfItem(ot_objid, charid, oldslot);
 		}
@@ -26,7 +29,7 @@ bool InventoryTable::moveItemToSlot(long long objid, long long charid, unsigned 
 
 unsigned long InventoryTable::getSlotFromItem(long long objid, long long charid) {
 	std::stringstream sq;
-	sq << "SELECT `slot` FROM `inventory` WHERE `owner` = '" << charid << "' AND `object` = '" << objid << "';";
+	sq << "SELECT `slot` FROM `inventory` WHERE `owner` = '" << charid << "' AND `objectid` = '" << objid << "';";
 	auto sqr = Database::Query(sq.str());
 	if (mysql_num_rows(sqr) > 0) {
 		auto row = mysql_fetch_row(sqr);
@@ -38,9 +41,9 @@ unsigned long InventoryTable::getSlotFromItem(long long objid, long long charid)
 	}
 }
 
-long long InventoryTable::getItemFromSlot(long long charid, unsigned long slot) {
+long long InventoryTable::getItemFromSlot(long long charid, unsigned long slot, int tab) {
 	std::stringstream iq;
-	iq << "SELECT `object` FROM `inventory` WHERE `owner` = '" << charid << "' AND `slot` = '" << slot << "';";
+	iq << "SELECT `objectid` FROM `inventory` WHERE `owner` = '" << charid << "' AND `slot` = '" << slot << "' AND `tab` = '"<<tab<<"';";
 	auto iqr = Database::Query(iq.str());
 	if (mysql_num_rows(iqr) > 0) {
 		auto ir = mysql_fetch_row(iqr);
@@ -58,8 +61,30 @@ void InventoryTable::deleteInventory(long long charid) {
 	Database::Query(eqqr.str());
 }
 
+int InventoryTable::getTab(long lot) {
+	std::stringstream ss;
+	ss << "SELECT `type` FROM `Objects` WHERE `id` = '" << lot << "';";
+	sqdb::Statement statement = SQLiteDatabase::Query("cdclient.sqlite", ss.str().c_str());
+	if (statement.Next()) {
+		std::string type = statement.GetField(0).GetString();
+		if (type == "Behavior") {
+			return 7;
+		}
+		else if (type == "LEGO brick") {
+			return 2;
+		}
+		else if (type == "Model" || type == "Rebuildables") {
+			return 5;
+		}
+		else {
+			return 0;
+		}
+	}
+}
+
 void InventoryTable::insertItem(long long charid, unsigned long objTemplate, long long objid, unsigned long qnt, unsigned long slot, bool linked, long tab) {
 	std::stringstream str;
+	if (objid < 288000000000000000) { objid = ObjectID::generateObjectID(); }
 	str << "INSERT INTO `inventory` (`owner`, `object`, `qnt`, `slot`, `linked`, `tab`, `objectid`) VALUES(" << charid << ", " << objTemplate << ", " << std::to_string(qnt) << ", " << std::to_string(slot) << ", ";
 	if (linked) str << "1"; else str << "0";
 	str << ", " << tab << ", " << objid << ");";
@@ -67,7 +92,7 @@ void InventoryTable::insertItem(long long charid, unsigned long objTemplate, lon
 }
 
 void InventoryTable::deleteItem(long long charid, long long objid) {
-	Database::Query("DELETE FROM `inventory` WHERE `owner` = '" + std::to_string(charid) + "' AND `object` = '" + std::to_string(objid) + "';");
+	Database::Query("DELETE FROM `inventory` WHERE `owner` = '" + std::to_string(charid) + "' AND `objectid` = '" + std::to_string(objid) + "';");
 }
 
 
@@ -121,6 +146,7 @@ long ObjectsTable::getTemplateOfItem(long long objid) {
 }
 
 ObjectInfo ObjectsTable::getItemInfo(long long objid) {
+	return ObjectInfo(objid, ObjectsTable::getTemplateOfItem(objid), ObjectID::generateSpawnerID());
 	std::stringstream str;
 	str << "SELECT `template`, `spawnid` FROM `objects` WHERE `objectid` = '" << objid << "';";
 	auto qr = Database::Query(str.str());
@@ -212,6 +238,14 @@ std::vector<long long> EquipmentTable::getItems(long long charid) {
 		items.push_back(itemid);
 	}
 	return items;
+}
+
+long long EquipmentTable::getFromItemType(long long charid, unsigned long it) {
+	std::vector<long long> itms = EquipmentTable::getItems(charid);
+	for each (long long itm in itms)
+		if (CDClientDB::getItemType(CDClientDB::getComponentID(ObjectsTable::getTemplateOfItem(itm), 11)) == it)
+			return itm;
+	return NULL;
 }
 
 void EquipmentTable::equipItem(long long charid, long long objid, unsigned long itemType) {

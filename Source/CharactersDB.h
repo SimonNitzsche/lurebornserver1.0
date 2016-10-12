@@ -46,6 +46,7 @@ struct CharacterInfo{
 	unsigned int level;
 	unsigned int currency;
 	unsigned int reputation;
+	std::vector<int> inventorySize = std::vector<int> { 20,20,20,20 };
 };
 
 struct ListCharacterInfo{
@@ -74,6 +75,7 @@ public:
 
 	std::string getName();
 	void mapTable(std::unordered_map<std::string, compare<ColData *> *> * data);
+	static void UpgradeTable();
 };
 
 class FriendsTable : public MySQLTable{
@@ -109,6 +111,9 @@ struct MISSION_DATA{
 class MissionsTable : public MySQLTable{
 public:
 	static std::vector<MISSION_DATA> getMissions(long long charid);
+	static MISSION_DATA getMissionById(long long charid, int misID);
+	static bool haveMission(long long charid, int misID);
+	static void addMission(long long charid, int misID);
 
 	std::string getName();
 	void mapTable(std::unordered_map<std::string, compare<ColData *> *> * data);

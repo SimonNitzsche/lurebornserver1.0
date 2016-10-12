@@ -25,12 +25,15 @@
 #include "Worlds.h"
 #include "GameMessages.h"
 #include "WebAPIService.h"
+#include "Interact.h"
 
 // - Network -
 #include "CharPackets.h"
 #include "legoPackets.h"
 #include "Packet.h"
 #include "WorldServer.h"
+#include "Macro.h";
+
 // -- Connections --
 #include "WorldConnection.h"
 
@@ -211,6 +214,7 @@ void WorldLoopThread(std::vector<unsigned char> buffer, bool LUNI_WRLD, bool buf
 
 RakPeerInterface* WorldLoop::rakServer;
 void WorldLoop(CONNECT_INFO* cfg) {
+
 	// Initialize the RakPeerInterface used throughout the entire server
 	WorldLoop::rakServer = RakNetworkFactory::GetRakPeerInterface();
 
@@ -236,11 +240,12 @@ void WorldLoop(CONNECT_INFO* cfg) {
 	// server to function properly)
 	if (WorldLoop::rakServer->Startup(8, 30, &socketDescriptor, 1)) {
 		Logger::log("WRLD", "", "started! Listening on port " + std::to_string(cfg->listenPort));
-		Instances::registerInstance(ServerAddress);
+		
+		Instances::currentInstance = Instances::registerInstance(ServerAddress);
 	} else exit(2);
 
-	// Set max incoming connections to 8
-	WorldLoop::rakServer->SetMaximumIncomingConnections(8);
+	// Set max incoming connections to 16
+	WorldLoop::rakServer->SetMaximumIncomingConnections(16);
 
 	// If msgFileHandler is not NULL, save logs of char server
 	if (msgFileHandler != NULL) msgFileHandler->StartLog(".\\logs\\world");
@@ -297,11 +302,16 @@ void WorldLoop(CONNECT_INFO* cfg) {
 	ChatCommandManager::registerCommands(new PlayAnimationCommandHandler());
 	ChatCommandManager::registerCommands(new SmashCommandHandler());
 	ChatCommandManager::registerCommands(new FlagCommandHandler());
+	ChatCommandManager::registerCommands(new MacroCommandHandler());
+	ChatCommandManager::registerCommands(new TestCommandHandler());
 
 	bool LUNI_WRLD = true;
 	std::vector<unsigned char> buffer;
 	bool buffer_started = false;
 
+	CharactersTable::UpgradeTable();
+
+	Macro::LoadMacros();
 	StaticObjectsDB::loadAll();
 	
 	// This will be used in the saving of packets below...
@@ -609,265 +619,14 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 
 			GameMSG::parseGameMSG(msgid, data, systemAddress);
 
-
+			//I left this there because Alan hasn't released his second version of the missions already and i don't want to damage it.
 			/*switch (msgid) {
-			case PLAY_EMOTE: {
-				SessionInfo s = SessionsTable::getClientSession(systemAdress);
-
-				unsigned short emoteid;
-				data->Read(emoteid);
-				unsigned long long target;
-				data->Read(target);
-
-				Logger::log("WRLD", "SPEEDCHAT", "TargetID: " + std::to_string(target));
-
-				unsigned long left = ((data->GetNumberOfUnreadBits() - 1) >> 3) + 1;
-				Logger::log("WRLD", "SPEEDCHAT", "Bytes left in stream: " + std::to_string(left));
-
-				std::wstring animationid = CDClientDB::getAnimationOfEmote(emoteid);
-				if (animationid != L"INVALID")
-					GameMSG::playAnimation(s.activeCharId, animationid);
-
-				printData = true;
-				break;
-			}
-			case START_SKILL: {
-				printData = true;
-				break;
-			}
-			case SELECT_SKILL: {
-				printData = true;
-				break;
-			}
-			case MOVE_ITEM_IN_INVENTORY: {
-				SessionInfo s = SessionsTable::getClientSession(systemAddress);
-				//When you move on item on top of another item, then the two change their place
-				bool flag;
-				data->Read(flag);
-				long long objid;
-				data->Read(objid);
-				long long unknown;
-				data->Read(unknown);
-				unsigned long slot;
-				data->Read(slot);
-
-				Logger::log("WRLD", "INVENTORY", "Move obj[" + std::to_string(objid) + "] to slot '" + std::to_string(slot) + "' (" + std::to_string(unknown) + "|" + std::to_string(flag), LOG_DEBUG);
-				InventoryTable::moveItemToSlot(objid, s.activeCharId, slot);
-
-				bool end;
-				for (int k = 0; k < 7; k++){
-					data->Read(end);
-				}
-				break;
-			}
-			case REMOVE_ITEM_FROM_INVENTORY: {
-				bool mode;
-				data->Read(mode);
-				unsigned long uk1;
-				data->Read(uk1);
-				unsigned long long uk2;
-				data->Read(uk2);
-				bool a1, a2, a3, a4, a5, a6, a7;
-				data->Read(a1);
-				data->Read(a2);
-				data->Read(a3);
-				data->Read(a4);
-				data->Read(a5);
-				data->Read(a6);
-				data->Read(a7);
-				long long itemid;
-				data->Read(itemid);
-				unsigned char uk4;
-				data->Read(uk4);
-				unsigned long uk5;
-				data->Read(uk5);
-				if (mode == true){
-					Logger::log("WLRD", "INVENTORY", "Delete item " + std::to_string(objid) + " from character " + std::to_string(objid));
-					InventoryTable::deleteItem(objid, itemid);
-					ObjectsTable::deleteObject(itemid);
-				}
-				break;
-			}
-			case EQUIP_INVENTORY: {
-
-				SessionInfo s = SessionsTable::getClientSession(systemAddress);
-				//Equip an item
-				bool flag;
-				data->Read(flag);
-				bool flag2;
-				data->Read(flag2);
-				long long objid;
-				data->Read(objid);
-				Logger::log("WORLD", "EQUIP", "Equip obj [" + std::to_string(objid) + "]", LOG_ALL);
-				bool end;
-				for (int k = 0; k < 7; k++){
-					data->Read(end);
-				}
-
-				PlayerObject *player = (PlayerObject *)ObjectsManager::getObjectByID(s.activeCharId);
-				if (player != NULL){
-					long lot = player->getComponent17()->equipItem(objid);
-
-					long long test = EquipmentTable::getFromItemType(s.activeCharId, CDClientDB::getItemType(CDClientDB::getComponentID(lot, 11)));
-					if (test != -1) {
-						bool un = player->getComponent17()->unequipItem(test);
-						if (!un){
-							Logger::log("WRLD", "EQUIP", "ERROR: item not found", LOG_ERROR);
-						}
-						else {
-							EquipmentTable::unequipItem(s.activeCharId, test);
-							unsigned long LOT = ObjectsTable::getTemplateOfItem(test);
-
-							unsigned long skillID = CDClientDB::getSkillID(LOT, 0);
-							if (LOT == LOT::LOT_SLITHERSTRIKER ||
-								LOT == LOT::LOT_NIGHTLASHER ||
-								LOT == LOT::LOT_ENERGY_SPORK ||
-								LOT == LOT::LOT_ZAPZAPPER)
-								skillID = 148;
-							if (skillID != -1)
-								GameMSG::removeSkill(s.activeCharId, skillID);
-
-							if (LOT == LOT::LOT_JETPACK || LOT == LOT::LOT_PROPERTY_JETPACK) {
-								std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
-								for (unsigned int k = 0; k < sessionsz.size(); k++){
-									WorldServerPackets::SendGameMessage(sessionsz.at(k).addr, s.activeCharId, 561);
-								}
-							}
-						}
-					}
-
-					unsigned long itemType = CDClientDB::getItemType(CDClientDB::getComponentID(lot, 11));
-					EquipmentTable::equipItem(s.activeCharId, objid, itemType);
-
-					unsigned long hotbarslot = 4;
-					if (itemType == ItemType::HAIR || ItemType::HAT)
-						hotbarslot = 3;
-					if (itemType == ItemType::NECK)
-						hotbarslot = 2;
-					if (itemType == ItemType::RIGHT_HAND)
-						hotbarslot = 0;
-					if (itemType == ItemType::LEFT_HAND)
-						hotbarslot = 1;
-
-					unsigned long skillid = CDClientDB::getSkillID(lot, 0);
-					if (lot == LOT::LOT_SLITHERSTRIKER ||
-						lot == LOT::LOT_NIGHTLASHER ||
-						lot == LOT::LOT_ENERGY_SPORK ||
-						lot == LOT::LOT_ZAPZAPPER)
-						skillid = 148;
-					if (skillid != -1)
-						GameMSG::addSkill(s.activeCharId, skillid, hotbarslot);
-
-					if (lot == LOT::LOT_JETPACK) {
-						RakNet::BitStream *pc = WorldServerPackets::InitGameMessage(s.activeCharId, 561);
-
-						pc->Write((unsigned long)0x70ba);
-						pc->Write((unsigned short)0x8);
-						pc->Write((unsigned char)0x5);
-						pc->Write((unsigned char)0x2);
-						pc->Write((unsigned short)0xc);
-						pc->Write((unsigned char)0x3);
-						pc->Write((unsigned short)0x6c1);
-						pc->Write((unsigned char)0x0);
-						pc->Write((unsigned char)0x1);
-						pc->Write((unsigned char)0x80);
-						pc->Write((unsigned char)0x7f);
-						pc->Write((unsigned long)0xa7);
-
-						std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
-						for (unsigned int k = 0; k < sessionsz.size(); k++){
-							WorldServer::sendPacket(pc, sessionsz.at(k).addr);
-						}
-					}
-
-					ObjectsManager::serialize(player);
-				}
-				break;
-			}
-			
 			case RESOND_TO_MISSION: {
 				break;
 			}
 			case MISSION_DIALOGUE_CANCELLED: {
 				break;
 			} 
-			case UNEQUIP_INVENTORY: {
-				SessionInfo s = SessionsTable::getClientSession(systemAddress);
-				bool flag;
-				data->Read(flag);
-				bool flag2;
-				data->Read(flag2);
-				bool flag3;
-				data->Read(flag3);
-				long long objid;
-				data->Read(objid);
-				Logger::log("WRLD", "EQUIP", "Unequip object [" + std::to_string(objid) + "]", LOG_ALL);
-				bool end;
-				for (int k = 0; k < 5; k++){
-					data->Read(end);
-				}
-				PlayerObject *player = (PlayerObject *)ObjectsManager::getObjectByID(s.activeCharId);
-				if (player != NULL){
-					bool un = player->getComponent17()->unequipItem(objid);
-					if (!un){
-						Logger::log("WRLD", "EQUIP", "ERROR: item not found", LOG_ERROR);
-					}
-					else{
-						EquipmentTable::unequipItem(s.activeCharId, objid);
-						unsigned long LOT = ObjectsTable::getTemplateOfItem(objid);
-
-						unsigned long skillID = CDClientDB::getSkillID(LOT, 0);
-						if (LOT == LOT::LOT_SLITHERSTRIKER ||
-							LOT == LOT::LOT_NIGHTLASHER ||
-							LOT == LOT::LOT_ENERGY_SPORK ||
-							LOT == LOT::LOT_ZAPZAPPER)
-							skillID = 148;
-						if (skillID != -1)
-							GameMSG::removeSkill(s.activeCharId, skillID);
-
-						if (LOT == LOT::LOT_JETPACK || LOT == LOT::LOT_PROPERTY_JETPACK) {
-							std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
-							for (unsigned int k = 0; k < sessionsz.size(); k++){
-								WorldServerPackets::SendGameMessage(sessionsz.at(k).addr, s.activeCharId, 561);
-							}
-						}
-
-						ObjectsManager::serialize(player);
-					}
-				}
-				break;
-			}
-				
-			case REQUEST_USE: {
-				//Interaction
-				//There has to be a flag somewhere in here, with the speedchat messages I found out that it is offset by one bit.
-				//Normally all bits until there are 0, i'll check both sides to see if anything happens -> where the flag is
-				bool flag1;
-				data->Read(flag1);
-				data->SetReadOffset(data->GetReadOffset() - 1);
-				unsigned long long something3;
-				data->Read(something3);
-				bool flag;
-				data->Read(flag);
-				unsigned long long object;
-				data->Read(object);
-
-				ObjectInformation o = getObjectInformation(object);
-				Logger::log("WRLD", "INTERACT", getObjectDescription(o, object));
-
-				SessionInfo s = SessionsTable::getClientSession(systemAddress);
-				PlayerObject *player = (PlayerObject *)ObjectsManager::getObjectByID(s.activeCharId);
-
-				bool b;
-				for (unsigned char a = 0; a < 7; a++) data->Read(b);
-				if (o.type == ObjectType::NONE){
-					//logic here needs to be redone
-				}
-				else{
-					handleObject(o, rakServer, systemAddress);
-				}
-				break;
-			}
 			case MISSION_DIALOGUE_OK: {
 				bool bIsComplete;
 				data->Read(bIsComplete);
@@ -946,452 +705,8 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 				else{
 					//Rows = 0?
 				}
-			}
-			case PLAYER_LOADED:
-			{
-				//happens on client ready
-				long long object;
-				data->Read(object);
-				//cout << "Object: " << object << std::endl;
-				ObjectInformation o = getObjectInformation(object);
-				Logger::log("WRLD", "LOAD?", getObjectDescription(o, object));
-				//Some sort of loading, L8: objid
-
-				RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(object, 1043);
-				ef->Write((bool)false);
-				ef->Write((bool)true);
-				ef->Write((bool)false);
-				WorldServer::sendPacket(ef, systemAddress);
-
-				RakNet::BitStream * ef2 = WorldServerPackets::InitGameMessage(object, 0x021a);
-				ef2->Write((bool)false);
-				WorldServer::sendPacket(ef2, systemAddress);
-
-			}
-				break;
-			case MESSAGE_BOX_RESPOND:
-			{
-				//Some sort of script
-				//e.g. Closing a plaque
-				unsigned long something;
-				data->Read(something);
-				unsigned long len;
-				data->Read(len);
-				std::vector<wchar_t> mV;
-				mV.reserve(len);
-				for (unsigned long k = 0; k < len; k++){
-					wchar_t mC;
-					data->Read(mC);
-					mV.push_back(mC);
-				}
-				std::wstring script(mV.begin(), mV.end());
-				unsigned long something2;
-				data->Read(something2);
-				Logger::log("WRLD", "SCRIPT", "530: " + UtfConverter::ToUtf8(script));
-				//if (something > 0) cout << " [1:" << something << "]";
-				//if (something2 > 0) cout << " [2:" << something2 << "]";
-				//cout << endl;
-			}
-				break;
-			case USE_NON_EQUIPMENT_ITEM:
-			{
-				//Open Bag
-				long long aobjid;
-				data->Read(aobjid);
-				Logger::log("WRLD", "GMSG", "Open object " + std::to_string(aobjid));
-			}
-				break;
-			case QUERY_PROPERTY_DATA:
-			{
-				//This happens independant of the Zone you are in, and these are NOT the object IDs of the characters equipment.
-				//It is still probably some sort of registering of Objects
-				Logger::log("WRLD", "ZONELOAD", "Registering Object???", LOG_ALL);
-				break;
-			}
-				
-			case FIRE_EVENT_SERVER_SIDE:
-			{
-				SessionInfo s = SessionsTable::getClientSession(systemAddress);
-				
-				//Some sort of script
-				//e.g. Closing a postbox
-				//For this message, the objid is the ID of the postbox in question
-
-				//Ok actually, this is called from within the LUA script for the post box
-				//in L_MAIL_BOX_INTERACT.lua, with the postbox as game message object and the user later on
-				//this means, that this here is the server endpoint for the lua function:
-				//object:fireEventServerSide('text', object)
-				//Which is exactly what we recieve here.
-
-				unsigned long len;
-				data->Read(len);
-				std::vector<wchar_t> mV;
-				mV.reserve(len);
-				for (unsigned long k = 0; k < len; k++){
-					wchar_t mC;
-					data->Read(mC);
-					mV.push_back(mC);
-				}
-				std::wstring script(mV.begin(), mV.end());
-				Logger::log("WRLD", "SCRIPT", "770: " + UtfConverter::ToUtf8(script), LOG_DEBUG);
-				bool f;
-				for (unsigned char k = 0; k < 3; k++){
-					data->Read(f);
-				}
-
-				unsigned long long object;
-				data->Read(object);
-				ObjectInformation o = getObjectInformation(object);
-				Logger::log("WRLD", "SCRIPT", "Object: " + getObjectDescription(o, object), LOG_DEBUG);
-
-				bool dat;
-				for (unsigned char i = 0; i < 5; i++){
-					data->Read(dat);
-				}
-
-				if (script == L"toggleMail"){
-					Mail::closeMailbox(s.activeCharId);
-				}
-			}
-				break;
-			case TOGGLE_GHOST_REFERENCE_OVERRIDE:
-				bool isStart;
-				data->Read(isStart);
-				bool dat;
-				for (unsigned char i = 0; i < 7; i++){
-					data->Read(dat);
-				}
-				if (isStart) Logger::log("WRLD", "PARSER", "Camerapath started"); else Logger::log("WRLD", "PARSER", "Camerapath finished");
-				break;
-			case SET_GHOST_REFERENCE_POSITION:
-			{
-				//Camera moving
-				REPLICA_OBJECT_POSITION pos;
-				data->Read(pos);
-				std::stringstream str;
-				str << "Camera-Position: (X:" << pos.posX << "|Y:" << pos.posY << "|Z:" << pos.posZ << ")";
-				Logger::log("WRLD", "PARSER", str.str());
-			}
-				break;
-			case PARSE_CHAT_MESSAGE: //Chat messages and commands, starting with '/'
-			{
-				unsigned long unknown;
-				data->Read(unknown);
-				unsigned long len;
-				data->Read(len);
-				Logger::log("WRLD", "CHAT", "Recieved Packet of Length " + std::to_string(len), LOG_ALL);
-				vector<wchar_t> msgVector;
-				msgVector.reserve(len);
-				for (unsigned long k = 0; k < len; k++){
-					wchar_t mchr;
-					data->Read(mchr);
-					msgVector.push_back(mchr);
-				}
-
-				std::wstring message(msgVector.begin(), msgVector.end());
-				Logger::log("WRLD", "CHAT", "Recieved message: \"" + UtfConverter::ToUtf8(message) + "\"");
-
-				if (message.substr(0, 1) == L"/"){
-					std::wstring command;
-					std::vector<std::wstring> params;
-					unsigned char state = 0;
-
-					for (unsigned int k = 0; k < message.length(); k++){
-						wchar_t chr = message.at(k);
-						if (state == 0){
-							//Nothing is parsed yet
-							if (chr == L'/'){ //Needs to start with '/'
-								state = 1; //Set state to STATE_COMMAND
-							}else{
-								break;
-							}
-						}
-						else if (state == 1){
-							//We are parsing the command name
-							if (chr == L' '){
-								state = 2;
-							}else{
-								command.push_back(chr);
-							}
-						}
-						else if (state == 2){
-							//expecting commands
-							if (chr == L' '){
-								//We could have two modes: add an empty param or ignore more spaces
-								//Aditionally we can test if the last one was already an empty one
-								//To be safe for now, just ignore it
-							}
-							else if (chr == L'"'){ //Start of a string command
-								params.push_back(L"");
-								state = 4;
-							}
-							else{
-								//Start of a normal command
-								params.push_back(std::wstring(1, chr));
-								state = 3;
-							}
-						}
-						else if (state == 3){
-							//Normal param
-							if (chr == L' '){
-								state = 2;
-							}
-							else{
-								params.at(params.size() - 1).append(1, chr);
-							}
-						}
-						else if (state == 4){
-							//String param
-							if (chr == L'"'){
-								state = 2;
-								//what do we do with that? It should be a parsing error when not followed by a space
-							}
-							else if (chr == L'\\'){
-								state = 5;
-							}
-							else{
-								params.at(params.size() - 1).append(1, chr);
-							}
-						}
-						else if (state == 5){
-							//Escape sequences
-							if (chr == L'n'){
-								params.at(params.size() - 1).append(L"\n");
-							}
-							else if (chr == L't'){
-								params.at(params.size() - 1).append(L"\t");
-							}
-							else{
-								params.at(params.size() - 1).append(1, chr);
-							}
-						}
-					}
-					Logger::log("WRLD", "CHAT", "Command: " + UtfConverter::ToUtf8(command));
-
-					//Packet 1: 2365 (ZoneControl Object)
-					//Packet 2: objid: 288300744895889662 LOT: 6635 SpawnerId: 72567767517768 (Mardolf the Orange)
-					//Packet 3: objid: 288300744895889664 LOT: 6636 SpawnerId: 72567767517769 (Rad Eccles)
-					//Packet 4: objid: 288300744895889669 LOT: 3495 SpawnerId: 72567767517772
-					//Packet 5: objid: 288300744895899827 LOT: 6726 SpawnerId: 72567767517771
-					//Packet 6: objid: 288300744895909034 LOT: 5637 SpawnerId: 3695535 NodeID: 1, Starts with Index 20 (position), x:-309.645782, y:288.356626, z: 70.64473 (Robot Dog Pet)
-					//Packet 7: objid: 288300744895889606 LOT: 3646 SpawnerId: 3695538 NodeId: 3, 
-					//Packet 8: objid: 288300744895930870 LOT: 9717 SpawnerId: 72567767517763,
-					//Packet 9: PLAYER
-
-					SessionInfo s = SessionsTable::getClientSession(systemAddress);
-					ChatCommandManager::handleCommand(command, &s, &params);
-				}
-			}
-				break;
-			case READY_FOR_UPDATES:
-			{
-				long long object;
-				data->Read(object);
-				ObjectInformation o = getObjectInformation(object);
-				Logger::log("WRLD", "OBJECT", getObjectDescription(o, object));
-				//Some sort of loading, L8: objid
-			}
-				break;
-			case SYNC_SKILL: //fighting stuff
-			{
-				bool flag;
-				data->Read(flag);
-				unsigned long d1;
-				data->Read(d1);
-				Logger::log("WRLD", "COMBAT", std::to_string(flag) + "|" + std::to_string(d1));
-				PacketTools::printBytes(data, d1);
-				unsigned long num1;
-				data->Read(num1);
-				unsigned long num2;
-				data->Read(num2);
-				Logger::log("WRLD", "COMBAT", std::to_string(num1) + "|" + std::to_string(num2));
-			}
-				break;
-			case 1202: //when the player presses the smash button in the menu
-			{
-				//we need to smash the player here
-				
-				SessionInfo *s = &SessionsTable::getClientSession(systemAddress);
-
-				RakNet::BitStream * ef2 = WorldServerPackets::InitGameMessage(s->activeCharId, DIE);
-				ef2->Write((bool)false);
-				ef2->Write((bool)false);
-				ef2->Write((float)-1);
-				ef2->Write((long)0);
-				ef2->Write((float)0);
-				ef2->Write((float)0);
-				ef2->Write((float)0);
-				ef2->Write((bool)false);
-				ef2->Write((unsigned long long)s->activeCharId);
-				ef2->Write((unsigned long long)s->activeCharId);
-				WorldServer::sendPacket(ef2, systemAddress);
-
-
-				Logger::log("WRLD", "HELP", "Teleported back to where they started!", LOG_DEBUG);
-			}
-				break;
-			case REQUEST_RESURRECT: //moved
-			{
-				SessionInfo *s = &SessionsTable::getClientSession(systemAddress);
-				RakNet::BitStream * ef2 = WorldServerPackets::InitGameMessage(s->activeCharId, 0x00a0);
-				ef2->Write((bool)false);
-				WorldServer::sendPacket(ef2, systemAddress);
-			}
-			break;
-			case 1308: //minigames
-			{
-				//This handles the requirements of a minigame for the server side.
-				//Starting with 8 bytes of objectId?, then 4 bytes for the data length
-				//Then that with a null byte terminator?
-				//Then two 4 byte values
-				unsigned long long object;
-				data->Read(object);
-
-				Logger::log("WRLD", "MINIGAME", "Cost?: objid: " + std::to_string(objid), LOG_DEBUG);
-
-				unsigned long len;
-				data->Read(len);
-
-				if (len > 0){
-					std::vector<wchar_t> mV;
-					mV.reserve(len);
-					for (unsigned long k = 0; k < len; k++){
-						wchar_t mC;
-						data->Read(mC);
-						mV.push_back(mC);
-					}
-					std::wstring script(mV.begin(), mV.end());
-					//I guess this is a null terminator as it only appears with text content, but not included in length
-					unsigned short nullT;
-					data->Read(nullT);
-					Logger::log("WRLD", "MINIGAME", "Data: " + UtfConverter::ToUtf8(script));
-				}
-				//These 8 bytes should be two values, since the only thing I found so far has content only in the 5th
-				unsigned long dataA;
-				unsigned long dataB;
-				data->Read(dataA);
-				data->Read(dataB);
-				Logger::log("WRLD", "MINIGAME", "A: " + std::to_string(dataA) + ", B: " + std::to_string(dataB), LOG_DEBUG);
-			}
-				break;
-			case USED_INFORMATION_PLAQUE:
-			{
-				unsigned long long object;
-				data->Read(object);
-				Logger::log("WLRD", "UNKNOWN", "Objectid: " + std::to_string(object));
-				break;
-			}
-			case 1734: {
-				//when you level up
-				//Level UP
-
-				SessionInfo s = SessionsTable::getClientSession(systemAddress);
-				ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(s.activeCharId);
-
-				Database::Query("UPDATE `characters` SET `level` = '" + std::to_string(cinfo.info.level + 1) + "' WHERE `objectID` = '" + std::to_string(s.activeCharId) + "';");
-				std::vector<SessionInfo> wsessions = SessionsTable::getClientsInWorld(s.zone);
-				std::wstring name;
-				name.assign(cinfo.info.name.begin(), cinfo.info.name.end());
-				for (unsigned int i = 0; i < wsessions.size(); i++){
-					Chat::sendChatMessage(wsessions.at(i).activeCharId, name + L" is now at level "+std::to_wstring(cinfo.info.level+1), L"System", false);
-				}
-
-			}
-				break;
-			case 1198: //help menu reporting
-			{
-				printData = true;
-				//I dont know what the first byte is, but everything after that is just ascii encoded
-				unsigned long unknown;
-				data->Read(unknown);
-				char letter;
-				bool test = true;
-				std::string message = ""; 
-				std::string otherInfo = "";
-
-				char discard;
-				while (data->Read(letter)){
-					if (test){
-						data->Read(discard);
-						message += letter;
-					}
-					else{
-						otherInfo += letter;
-					}
-					
-
-					if (letter == 0x07) //if we have reached the end of the help string
-					{
-						test = false;
-					}
-				}
-
-
-				Logger::log("WRLD", "HELP", "Recieved help message: " + message);
-				Logger::log("WRLD", "HELP", "Help message info: " + otherInfo);
-
-			}
-				break;
-			case PICKUP_ITEM: 
-			{
-				SessionInfo *s = &SessionsTable::getClientSession(systemAddress);
-				SessionInfo s1 = SessionsTable::getClientSession(systemAddress);
-				unsigned long long lootId;
-				unsigned long long playerId;
-
-				data->Read(lootId);
-				data->Read(playerId);
-
-				ReplicaObject * loot = ObjectsManager::getObjectByID(lootId);
-
-				std::vector<MISSION_DATA> mis = MissionsTable::getMissions(s1.activeCharId);
-				if (lootId == 935 && mis[0].missionid == 173 && mis[0].missionStatus < 4){
-					mis[0].missioncount += 1;
-					Database::Query("UPDATE `missions` SET `count` = '" + std::to_string(mis[0].missioncount) + "' WHERE `character` = '" + std::to_string(s1.activeCharId) + "' AND `missionId` = '173'");
-					RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(s1.activeCharId, 851);
-					ef->Write((unsigned long)0);
-					ef->Write((std::string)"");
-					ef->Write((std::string)"");
-					WorldServer::sendPacket(ef, s1.addr);
-				}
-
-				unsigned long slot = -1;
-				for (int i = 0; (slot == -1) && (i != 24); i++){
-					if (InventoryTable::getItemFromSlot(playerId, i) == -1)
-						slot = i;
-				}
-
-				if (slot == -1){
-					//no room
-				}
-				else{
-
-					InventoryTable::insertItem(s->activeCharId, loot->LOT, 1, slot, false);
-
-					RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(s->activeCharId, 227);
-					ef->Write((bool)false);
-					ef->Write((bool)false);
-					ef->Write((bool)true);
-					ef->Write((bool)false);
-					ef->Write((unsigned long)0);
-					ef->Write((unsigned long)loot->LOT);
-					ef->Write((bool)false);
-					ef->Write((bool)false);
-					ef->Write((bool)true);
-					ef->Write((unsigned long)1);
-					ef->Write((bool)true);
-					ef->Write((unsigned long)0);
-					ef->Write(lootId);
-					ef->Write((float)0);
-					ef->Write((float)0);
-					ef->Write((float)0);
-					ef->Write((bool)true);
-					ef->Write((unsigned long)slot);
-
-					WorldServer::sendPacket(ef, s->addr);
-				}
-			}
-			break;
+			} break
+			
 			default:
 				Logger::log("WRLD", "GAMEMESSAGE", "Unknown Game Message: " + std::to_string(msgid));
 				break;
@@ -1453,7 +768,7 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 				ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(objid);
 
 				COMPONENT1_POSITION pos;
-				COMPONENT1_ROTATION rot;
+				COMPONENT1_ROTATION rot = COMPONENT1_ROTATION();
 				ZoneId zid = static_cast<ZoneId>(za.zoneid);
 				if (za.zoneid == cinfo.lastPlace.zoneID){
 					pos = COMPONENT1_POSITION(cinfo.lastPlace.x, cinfo.lastPlace.y, cinfo.lastPlace.z);
@@ -1462,11 +777,9 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 				}
 				else{
 					pos = getZoneSpawnPoint(zid);
-					rot = COMPONENT1_ROTATION();
 				}
 				if (za.zoneid == 1000){
 					pos = COMPONENT1_POSITION(-625.303, 613.414, -25.6505);
-					rot = COMPONENT1_ROTATION();
 				}
 
 				WorldServerPackets::CreateCharacter(systemAddress, objid);
@@ -1542,6 +855,13 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 				pc->Write((unsigned long)185);
 				pc->Write((unsigned char)0);
 				WorldServer::sendPacket(pc, systemAddress);
+
+				long long leftHand = EquipmentTable::getFromItemType(s.activeCharId, ItemType::LEFT_HAND);
+				long long rightHand = EquipmentTable::getFromItemType(s.activeCharId, ItemType::RIGHT_HAND);
+				if (leftHand != NULL)
+					GameMSG::equipItem(s.activeCharId, leftHand);
+				if (rightHand != NULL)
+					GameMSG::equipItem(s.activeCharId, rightHand);
 
 				Logger::log("WRLD", "PARSER", "Enter session.");
 
@@ -1889,7 +1209,13 @@ bool handleObject(ObjectInformation obj, RakPeerInterface* rakServer, SystemAddr
 		}
 			break;
 		default:
-			return false;
+			try {
+				Interact::Interact(obj.objid, systemAddress);
+				return true;
+			}
+			catch (const std::exception&) {
+				return false;
+			}
 			break;
 		}
 	}

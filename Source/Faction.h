@@ -8,8 +8,8 @@
 // names and values
 enum FactionId : unsigned short {
 	NO_FACTION = -1,
-	ASSEMBLY,
 	VENTURE_LEAGUE,
+	ASSEMBLY,
 	PARADOX,
 	SENTINEL,
 };

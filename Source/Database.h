@@ -61,4 +61,5 @@ public:
 	static void registerTables();
 	static void registerTable(MySQLTable * tbl);
 	static void addColToMap(std::unordered_map<std::string, compare<ColData *> *> * data, std::string colName, ColData * colData);
+	static bool columnExists(std::string table, std::string column);
 };

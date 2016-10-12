@@ -314,3 +314,8 @@ void Database::addColToMap(std::unordered_map<std::string, compare<ColData *> *>
 	}
 	col->right = colData;
 }
+
+bool Database::columnExists(std::string table, std::string column) {
+	MYSQL_RES * stm = Database::Query("SHOW COLUMNS FROM `" + table + "` LIKE '" + column + "'");
+	return (stm->row_count > 0);
+}

@@ -1,0 +1,10 @@
+/deleteinven all
+/setinventorysize 100
+/gmadditem 1764
+/gmadditem 2631
+/gmadditem 6846
+/gmadditem 5954
+/gmadditem 2586
+/gmadditem 7148
+/gmadditem 7164
+/gmadditem 7149

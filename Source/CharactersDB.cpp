@@ -1,6 +1,7 @@
 #include "CharactersDB.h"
 #include "Database.h"
 #include "Logger.h"
+#include "Mission.h"
 
 #include <sstream>
 #include <iostream>
@@ -81,7 +82,8 @@ ListCharacterInfo CharactersTable::getCharacterInfo(std::string name){
 	qrs << "SELECT ";
 	qrs << "`accountID`, `objectID`, `name`, `unapprovedName`, `nameRejected`, `freeToPlay`, `gmlevel`, ";
 	qrs << "`shirtColor`, `shirtStyle`, `pantsColor`, `hairStyle`, `hairColor`, `lh`, `rh`, `eyebrows`, `eyes`, `mouth`, ";
-	qrs << "`lastZoneId`, `mapInstance`, `mapClone`, `x`, `y`, `z`, `uScore`, `level`, `currency`, `reputation` ";
+	qrs << "`lastZoneId`, `mapInstance`, `mapClone`, `x`, `y`, `z`, `uScore`, `level`, `currency`, `reputation`, ";
+	qrs << "`invSizeTab0`, `invSizeTab1`, `invSizeTab2`, `invSizeTab3` ";
 	qrs << "FROM `characters` WHERE `name` = '" << name << "';";
 	std::string qrss = qrs.str();
 	auto qr = Database::Query(qrss);
@@ -108,6 +110,8 @@ ListCharacterInfo CharactersTable::getCharacterInfo(MYSQL_RES *res){
 		i.info.level = std::stoi(r[24]);
 		i.info.currency = std::stoi(r[25]);
 		i.info.reputation = std::stoi(r[26]);
+		// TODO: For some reason this creates an error. Needs to be fixed
+		i.info.inventorySize = std::vector<int>{ 40,20,20,20 };//std::stoi(r[27]),std::stoi(r[28]),std::stoi(r[29]),std::stoi(r[30]) };
 		//Style
 		i.style.shirtColor = std::stoul(r[7]);
 		i.style.shirtStyle = std::stoul(r[8]);
@@ -240,6 +244,21 @@ void CharactersTable::mapTable(std::unordered_map<std::string, compare<ColData *
 	Database::addColToMap(data, "mapClone", new ColData("int(11)", false, "", "NULL", ""));
 	Database::addColToMap(data, "level", new ColData("int(3)", false, "", "1", ""));
 	Database::addColToMap(data, "uScore", new ColData("int(32)", false, "", "0", ""));
+	Database::addColToMap(data, "invSizeTab0", new ColData("int(5)", false, "", "20", ""));
+	Database::addColToMap(data, "invSizeTab1", new ColData("int(5)", false, "", "20", ""));
+	Database::addColToMap(data, "invSizeTab2", new ColData("int(5)", false, "", "20", ""));
+	Database::addColToMap(data, "invSizeTab3", new ColData("int(5)", false, "", "20", ""));
+}
+
+void CharactersTable::UpgradeTable() {
+	if (!Database::columnExists("characters", "invSizeTab0"))
+		Database::Query("ALTER TABLE `characters` ADD `invSizeTab0` INT(5) NOT NULL DEFAULT '20';");
+	if (!Database::columnExists("characters", "invSizeTab1"))
+		Database::Query("ALTER TABLE `characters` ADD `invSizeTab1` INT(5) NOT NULL DEFAULT '20';");
+	if (!Database::columnExists("characters", "invSizeTab2"))
+		Database::Query("ALTER TABLE `characters` ADD `invSizeTab2` INT(5) NOT NULL DEFAULT '20';");
+	if (!Database::columnExists("characters", "invSizeTab3"))
+		Database::Query("ALTER TABLE `characters` ADD `invSizeTab3` INT(5) NOT NULL DEFAULT '20';");
 }
 
 void FriendsTable::requestFriend(long long sender, long long reciever){
@@ -441,6 +460,38 @@ std::vector<MISSION_DATA> MissionsTable::getMissions(long long charid){
 			missions.push_back(m);
 		}
 		return missions;
+	}
+}
+
+MISSION_DATA MissionsTable::getMissionById(long long charid, int misID) {
+	MISSION_DATA m;
+	m.missionid = -1;
+	std::string qr = "SELECT `count`, UNIX_TIMESTAMP(`time`), `status` FROM `missions` WHERE `character` = '" + std::to_string(charid) +"' AND `missionid` = "+std::to_string(misID)+" LIMIT 1;";
+	auto qr2 = Database::Query(qr);
+	if (qr2 == NULL || !(mysql_num_rows(qr2) > 0)) {
+		MYSQL_ROW row;
+		while (row = mysql_fetch_row(qr2)) {
+			m.missionid = misID;
+			m.missioncount = std::stoi(row[0]);
+			m.timestamp = std::stoi(row[1]);
+			m.missionStatus = std::stoi(row[2]);
+		}
+	}
+	return m;
+}
+
+bool MissionsTable::haveMission(long long charid, int misID) {
+	int mid = MissionsTable::getMissionById(charid, misID).missionid;
+	Logger::log("CHDB", "MSDB", "HaveMission: " + (mid<0)?"NO":"YES");
+	return !(mid <0);
+}
+
+void MissionsTable::addMission(long long charid, int misID) {
+	if (!MissionsTable::haveMission(charid, misID)) {
+		std::stringstream qs;
+		qs << "INSERT INTO `missions`(`missionid`,`count`,`status`,`character`) ";
+		qs << "VALUES (" << misID << ",0," << std::to_string(int(MISSION_AVAILABLE)) << "," << charid << ");";
+		auto q=Database::Query(qs.str());
 	}
 }
 

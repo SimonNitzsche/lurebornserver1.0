@@ -22,6 +22,7 @@
 #include "CharactersDB.h"
 #include "GenericObject.h"
 #include "CDClientDB.h"
+#include "Macro.h"
 
 // SQLite
 #include "SQLiteDatabase.h"
@@ -142,6 +143,7 @@ void ChatCommandManager::handleCommand(std::wstring message, SessionInfo *s){
 				std::wstring cmd = ChatCommandManager::ChatCommandHandlers.at(k)->getCommandNames().at(0);
 				unsigned long stringvalue = cmd.size() * 4;
 				short diff = 0;
+				// TODO: Try to decrease the bugs in this section
 				std::wstring space = L"\t\t";
 				for (unsigned int l = 0; l < cmd.size(); l++){
 					wchar_t c = cmd.at(l);
@@ -165,6 +167,11 @@ void ChatCommandManager::handleCommand(std::wstring message, SessionInfo *s){
 			}
 		}
 	}
+	else if (command == L"runmacro") { //Used in macros
+		if (params.size() > 0) {
+			ChatCommandManager::handleCommand(L"/macro exec " + params.at(0), s);
+		}
+	}
 	else{
 		std::unordered_map<std::wstring, ChatCommandHandler *>::iterator it = ChatCommandManager::ChatCommands.find(command);
 		if (it != ChatCommandManager::ChatCommands.end()){
@@ -177,29 +184,26 @@ void ChatCommandManager::handleCommand(std::wstring message, SessionInfo *s){
 }
 
 void FlightCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params){
-	bool f2 = true;
 	if (params->size() > 0){
 		if (params->at(0) == L"off" || params->at(0) == L"false"){
-			WorldServerPackets::SendGameMessage(s->addr, s->activeCharId, 561);
-			f2 = false;
+			WorldServerPackets::SendGameMessage(s->addr, s->activeCharId, SET_JETPACK_MODE);
+			return;
 		}
 	}
-	if (f2){
-		RakNet::BitStream *pc = WorldServerPackets::InitGameMessage(s->activeCharId, 561);
-		pc->Write((unsigned long)0x70ba);
-		pc->Write((unsigned short)0x8);
-		pc->Write((unsigned char)0x5);
-		pc->Write((unsigned char)0x2);
-		pc->Write((unsigned short)0xc);
-		pc->Write((unsigned char)0x3);
-		pc->Write((unsigned short)0x6c1);
-		pc->Write((unsigned char)0x0);
-		pc->Write((unsigned char)0x1);
-		pc->Write((unsigned char)0x80);
-		pc->Write((unsigned char)0x7f);
-		pc->Write((unsigned long)0xa7);
-		WorldServer::sendPacket(pc, s->addr);
-	}
+	RakNet::BitStream *pc = WorldServerPackets::InitGameMessage(s->activeCharId, SET_JETPACK_MODE);
+	pc->Write((unsigned long)0x70ba);
+	pc->Write((unsigned short)0x8);
+	pc->Write((unsigned char)0x5);
+	pc->Write((unsigned char)0x2);
+	pc->Write((unsigned short)0xc);
+	pc->Write((unsigned char)0x3);
+	pc->Write((unsigned short)0x6c1);
+	pc->Write((unsigned char)0x0);
+	pc->Write((unsigned char)0x1);
+	pc->Write((unsigned char)0x80);
+	pc->Write((unsigned char)0x7f);
+	pc->Write((unsigned long)0xa7);
+	WorldServer::sendPacket(pc, s->addr);
 }
 
 std::vector<std::wstring> FlightCommandHandler::getCommandNames(){
@@ -303,10 +307,10 @@ void TestmapCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstri
 	if (params->size() > 0){
 		std::string checkZoneID = UtfConverter::ToUtf8(params->at(0));
 		bool flag = true;
-		for (unsigned int i = 0; i < checkZoneID.length(); i++){
+		for (unsigned int i = 0; i < checkZoneID.length(); i++)
 			if (!isdigit(checkZoneID.at(i)))
 				flag = false;
-		}
+
 		if (flag){
 			unsigned short argumentValue = std::stoi(params->at(0));
 			ZoneId zone = static_cast<ZoneId>(argumentValue);
@@ -409,10 +413,12 @@ void ItemsCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring
 		if (params->at(0) == L"create"){
 			long lot = std::stol(params->at(1));
 			long long objid = ObjectsTable::createObject(lot);
+			// TODO: Replace ObjectID parsing with a more stable version
 			Chat::sendChatMessage(s->addr, L"Object created with id: " + std::to_wstring(objid - 1152921510794154770));
 		}
 
 		if (params->at(0) == L"equip"){
+			// TODO: Replace ObjectID parsing with a more stable version
 			long long objid = 1152921510794154770 + std::stoll(params->at(1));
 			PlayerObject *player = (PlayerObject *) ObjectsManager::getObjectByID(s->activeCharId);
 			if (player != NULL){
@@ -486,9 +492,11 @@ void AddItemCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstri
 				long lot = std::stoi(params->at(0));
 				unsigned long amount = std::stoi(checkAmount);
 
+				int tab = InventoryTable::getTab(lot);
+
 				unsigned long slot = -1;
 				for (int i = 0; (slot == -1) && (i != 24); i++) {
-					if (InventoryTable::getItemFromSlot(s->activeCharId, i) == -1)
+					if (InventoryTable::getItemFromSlot(s->activeCharId, i, tab) == -1)
 						slot = i;
 				}
 				for (unsigned int i = 0; i < checkAmount.length(); i++) {
@@ -505,56 +513,14 @@ void AddItemCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstri
 				else {
 					long long objid = ObjectID::generateObjectID();
 
-					std::stringstream ss;
-					ss << "SELECT `type` FROM `Objects` WHERE `id` = '" << lot << "';";
-					sqdb::Statement statement = SQLiteDatabase::Query("cdclient.sqlite", ss.str().c_str());
-
-					int tab;
-					if (statement.Next()) {
-						std::string type = statement.GetField(0).GetString();
-						if (type == "Behavior") {
-							tab = 7;
-						}
-						else if (type == "LEGO brick") {
-							tab = 2;
-						}
-						else if (type == "Model" || type == "Rebuildables") {
-							tab = 5;
-						}
-						else {
-							tab = 0;
-						}
-					}
-
-
 					InventoryTable::insertItem(s->activeCharId, lot, objid, amount, slot, false, tab);
 					//send live packet here
 
 					GameMSG::addItemToInventoryClientSync(s->activeCharId, objid, stol(checkLOT), slot, true);
-					/*
-					RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(s->activeCharId, 227);
-					ef->Write((bool)false); //bBound
-					ef->Write((bool)false); //bIsBOP
-					ef->Write((int)0);
-					ef->Write((bool)false);
-					ef->Write((unsigned long)0);
-					ef->Write(stol(checkLOT));
-					ef->Write((bool)false);
-					ef->Write((int)tab);
-					//ef->Write((bool)true);
-					ef->Write((unsigned long)stol(checkAmount));
-					//ef->Write((bool)true);
-					ef->Write((unsigned long)0);
-					ef->Write(objid);
-					ef->Write((float)0);
-					ef->Write((float)0);
-					ef->Write((float)0);
-					ef->Write((bool)true);
-					ef->Write((unsigned long)slot);*/
 
 					unsigned long slot = -1;
 					for (int i = 0; (slot == -1) && (i != 24); i++) {
-						if (InventoryTable::getItemFromSlot(s->activeCharId, i) == -1)
+						if (InventoryTable::getItemFromSlot(s->activeCharId, i, tab) == -1)
 							slot = i;
 					}
 
@@ -579,7 +545,7 @@ void AddItemCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstri
 }
 
 std::vector<std::wstring> AddItemCommandHandler::getCommandNames(){
-	return{ L"give" };
+	return{ L"give", L"gmadditem" };
 }
 
 std::wstring AddItemCommandHandler::getDescription(){
@@ -673,8 +639,8 @@ void AttributeCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wst
 				msg << L"Set imagination to " << value;
 			}
 			else if (attr == L"level"){
-				//c4->setLevel(value);
-				msg << L"This is a future feature. -Kendal";
+				c4->setLevel(value);
+				msg << L"Set level to "<<value;
 			}
 			c7->setData4(d4);
 			ObjectsManager::serialize(player);
@@ -899,10 +865,14 @@ void SpawnCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring
 					c3->setRotation(rot);
 
 					bool doSave = false;
-					if (params->size() > 1)
-						if (params->at(1) == L"true" || params->at(1) == L"yes" || params->at(1) == L"save")
-							doSave = true;
+					if (params->size() > 1){
+						if (params->size() > 2) 
+							if (params->at(2) == L"true" || params->at(2) == L"yes" || params->at(2) == L"save") 
+								doSave = true;
 
+						if (params->at(1) != L"none")
+							npc->name = params->at(1);
+					}
 					if (doSave) {
 						std::ostringstream st;
 						st << "INSERT INTO npcs (`name`, `world`, `x`, `y`, `z`, `rotX`, `rotY`, `rotZ`, `rotW`) VALUES ('" << stoul(params->at(0)) << "', '" << cinfo.lastPlace.zoneID << "' ,'" << player->getComponent1()->getPosition().x << "' , '" << player->getComponent1()->getPosition().y << "', '" << player->getComponent1()->getPosition().z << "', '" << player->getComponent1()->getRotation().x << "', '" << player->getComponent1()->getRotation().y << "', '" << player->getComponent1()->getRotation().z << "', '" << player->getComponent1()->getRotation().w << "');";
@@ -945,6 +915,10 @@ void SpawnCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring
 					c3->setVelocity(vel);
 					c3->setAngularVelocity(ang);
 
+					if (params->size() > 1)
+						if (params->at(1) != L"none")
+							enemy->name = params->at(1);
+
 					ObjectsManager::registerObject(enemy);
 					ObjectsManager::create(enemy);
 
@@ -965,6 +939,10 @@ void SpawnCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring
 					c3->setPosition(pos);
 					c3->setRotation(rot);
 
+					if (params->size() > 1)
+						if (params->at(1) != L"none")
+							npc->name = params->at(1);
+
 					ObjectsManager::registerObject(npc);
 					ObjectsManager::create(npc);
 
@@ -976,6 +954,10 @@ void SpawnCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring
 					COMPONENT1_POSITION pos = COMPONENT1_POSITION(player->getComponent1()->getPosition().x, player->getComponent1()->getPosition().y, player->getComponent1()->getPosition().z);
 					COMPONENT1_ROTATION rot = COMPONENT1_ROTATION(player->getComponent1()->getRotation().x, player->getComponent1()->getRotation().y, player->getComponent1()->getRotation().z, player->getComponent1()->getRotation().w);
 					GenericObject * smashable = new GenericObject(stoul(params->at(0)), cinfo.lastPlace.zoneID, pos, rot, COMPONENT1_VELOCITY(), COMPONENT1_VELOCITY_ANGULAR());
+
+					if (params->size() > 1)
+						if (params->at(1) != L"none")
+							smashable->name = params->at(1);
 
 					ObjectsManager::registerObject(smashable);
 					ObjectsManager::create(smashable);
@@ -1016,7 +998,7 @@ std::wstring SpawnCommandHandler::getShortDescription() {
 }
 
 std::wstring SpawnCommandHandler::getSyntax() {
-	return L"<LOT>";
+	return L"<LOT> [<name default:none> [save|true|yes]]";
 }
 
 void RemoveCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
@@ -1155,8 +1137,9 @@ void MissionCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstri
 					if (statement.GetField(0).GetInt() != -1){
 						Logger::log("WRL", "REWARDS", "Giving Player item: " + std::to_string(statement.GetField(0).GetInt()), LOG_DEBUG);
 						unsigned long slot = -1;
+						int tab = InventoryTable::getTab(statement.GetField(0).GetInt());
 						for (int i = 0; (slot == -1) && (i != 24); i++){
-							if (InventoryTable::getItemFromSlot(s->activeCharId, i) == -1)
+							if (InventoryTable::getItemFromSlot(s->activeCharId, i, tab) == -1)
 								slot = i;
 						}
 
@@ -1402,23 +1385,76 @@ std::wstring SmashCommandHandler::getShortDescription() {
 std::wstring SmashCommandHandler::getSyntax() {
 	return L"<oID>";
 }
-/*
-void DisplayMSGBoxCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
 
+void MacroCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
+	if (CharactersTable::getCharacterInfo(s->activeCharId).info.level>1) {
+		if (params->size() > 0) {
+			if (params->at(0) == L"list") {
+				Macro::EchoMacros(s->activeCharId);
+				return;
+			}
+			if (params->size() > 1) {
+				if (params->at(0) == L"exec" || params->at(0) == L"execute") {
+					Macro::ExecuteMacro(std::string(params->at(1).begin(), params->at(1).end()), s);
+					return;
+				}
+			}
+		}
+		Chat::sendChatMessage(s->activeCharId, getSyntax());
+		return;
+	}
+	Chat::sendChatMessage(s->activeCharId, L"Minimum permission level of 2 is required");
 }
 
-std::vector<std::wstring> DisplayMSGBoxCommandHandler::getCommandNames() {
-	return{ L"loc" };
+std::vector<std::wstring> MacroCommandHandler::getCommandNames() {
+	return{ L"macro" };
 }
 
-std::wstring DisplayMSGBoxCommandHandler::getDescription() {
+std::wstring MacroCommandHandler::getDescription() {
 	return L"";
 }
 
-std::wstring DisplayMSGBoxCommandHandler::getShortDescription() {
+std::wstring MacroCommandHandler::getShortDescription() {
 	return L"";
 }
 
-std::wstring DisplayMSGBoxCommandHandler::getSyntax() {
-	return L"";
-}*/
+std::wstring MacroCommandHandler::getSyntax() {
+	return L"/macro list|exec/execute {<macroFileName>}";
+}
+
+void TestCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
+	if (AccountsTable::getRank(s->accountid) < 2) { return; }
+	/*
+	// Set Inventory Size params: tab, size
+	RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(s->activeCharId, 185);
+	bs->Write(std::stoi(params->at(0)));
+	bs->Write(std::stoi(params->at(1)));
+	*/
+	//Race Dialog
+	RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(s->activeCharId, DISPLAY_MESSAGE_BOX);
+
+	bs->Write((bool)false);
+	bs->Write((long long)s->activeCharId);
+	bs->Write(L"Race_Dialog");
+	bs->Write((int)3);
+	bs->Write("Want to Race?");
+	//bs->Write()
+
+	WorldServer::sendPacket(bs, s->addr);
+}
+
+std::vector<std::wstring> TestCommandHandler::getCommandNames() {
+	return{ L"test" };
+}
+
+std::wstring TestCommandHandler::getDescription() {
+	return L"Use this command to test case sensive packets and stuff";
+}
+
+std::wstring TestCommandHandler::getShortDescription() {
+	return L"Test command for Developers";
+}
+
+std::wstring TestCommandHandler::getSyntax() {
+	return L"/test <params>";
+}

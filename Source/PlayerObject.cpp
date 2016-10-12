@@ -16,7 +16,8 @@
 
 PlayerObject::PlayerObject(long long objid, std::wstring name){
 	this->objid = objid;
-	int rank = CharactersTable::getCharacterInfo(objid).info.gmlevel;
+	// TODO: Make it dynamic (CLOAK COLUMN)
+	int rank = 0; // CharactersTable::getCharacterInfo(objid).info.gmlevel;
 
 	this->name = name.append(Characters::GetCharacterSubfix(objid));
 	

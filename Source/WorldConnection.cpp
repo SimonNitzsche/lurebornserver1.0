@@ -74,7 +74,7 @@ void WorldServerPackets::CreateCharacter(SystemAddress address, long long charob
 	ldf->writeBOOL(L"editor_enabled", false);
 	ldf->writeS32(L"editor_level", 0);
 	ldf->writeBOOL(L"freetrial", false);
-	ldf->writeS32(L"gmlevel", cinfo.info.gmlevel); //0 - Normal, 1 - Mythran
+	ldf->writeS32(L"gmlevel", (cinfo.info.gmlevel>0?1:0)); //0 - Normal, 1 - Mythran
 	ldf->writeBOOL(L"legoclub", true);
 
 	unsigned long long levelid = cinfo.lastPlace.zoneID + (((unsigned long long) cinfo.lastPlace.mapInstance) << 16) + (((unsigned long long) cinfo.lastPlace.mapClone) << 32);
@@ -100,10 +100,12 @@ void WorldServerPackets::CreateCharacter(SystemAddress address, long long charob
 	writeRaw(xml, "<skil/>");
 	writeRaw(xml, "<inv>");
 	writeRaw(xml, "<bag>");
-	writeRaw(xml, "<b t=\"0\" m=\"24\"/>"); //Items, Default size: 20
+	writeRaw(xml, "<b t=\"0\" m=\"" + std::to_string(cinfo.info.inventorySize.at(0)) + "\"/>");
+	writeRaw(xml, "<b t=\"1\" m=\"" + std::to_string(cinfo.info.inventorySize.at(1)) + "\"/>");
+	writeRaw(xml, "<b t=\"14\" m=\"" + std::to_string(cinfo.info.inventorySize.at(2)) + "\"/>");
+	writeRaw(xml, "<b t=\"15\" m=\"" + std::to_string(cinfo.info.inventorySize.at(3)) + "\"/>");
 	writeRaw(xml, "</bag>");
 	writeRaw(xml, "<items>");
-	writeRaw(xml, "<in>");
 	//Adding items to the inventory:
 	//l: LOT, template, type of item
 	//id: objid, unique, this object
@@ -111,48 +113,59 @@ void WorldServerPackets::CreateCharacter(SystemAddress address, long long charob
 	//b: present and set to "1" if object is linked to the player
 	//c: amout of this item
 	std::vector<InventoryItem> items = InventoryTable::getItems(charobjid);
+	std::vector<std::vector<InventoryItem>> sorteditems = {{},{},{},{},{},{},{}};
+	std::vector<int> tabi = { 0,1,2,5,7,8,12 };
 	for (unsigned int k = 0; k < items.size(); k++){
 		//long lot = ObjectsTable::getTemplateOfItem(items.at(k).objid);
 		ObjectInfo oinfo = ObjectsTable::getItemInfo(items.at(k).objid);
-		Logger::log("USER", "CHARDATA", "Adding item " + std::to_string(oinfo.lot) + "[" + std::to_string(oinfo.objid) + "] " + std::to_string(oinfo.spawnerid), LOG_ALL);
+		for (int ti = 0; ti < tabi.size(); ti++)
+			if (tabi.at(ti) == items.at(k).tab)
+				sorteditems.at(ti).push_back(items.at(k));
+	}
+	for (int sl = 0; sl < 7; sl++) {
+		writeRaw(xml, "<in t=\""+std::to_string(tabi.at(sl))+"\">");
+		for each (InventoryItem itm in sorteditems.at(sl)){
+			ObjectInfo oinfo = ObjectsTable::getItemInfo(itm.objid);
+			Logger::log("USER", "CHARDATA", "Adding item " + std::to_string(oinfo.lot) + "[" + std::to_string(oinfo.objid) + "] " + std::to_string(oinfo.spawnerid), LOG_ALL);
+			if (oinfo.lot > -1) {
+				std::stringstream adddata;
+				adddata << "<i l=\"" << oinfo.lot << "\" id=\"" << itm.objid << "\" s=\"" << itm.slot << "\"";
+				if (itm.qnt > 1) {
+					adddata << " c=\"" << itm.qnt << "\"";
+				}
+				if (oinfo.spawnerid > -1) {
+					adddata << " sk=\"" << oinfo.spawnerid << "\"";
+				}
+				if (itm.linked) {
+					adddata << " b=\"1\"";
+				}
+				if (oinfo.spawnerid > -1) {
+					adddata << ">";
 
-		if (oinfo.lot > -1){
-			std::stringstream adddata;
-			adddata << "<i l=\"" << oinfo.lot << "\" id=\"" << items.at(k).objid << "\" s=\"" << items.at(k).slot << "\"";
-			if (items.at(k).qnt > 1){
-				adddata << " c=\"" << items.at(k).qnt << "\"";
-			}
-			if (oinfo.spawnerid > -1){
-				adddata << " sk=\"" << oinfo.spawnerid << "\"";
-			}
-			if (items.at(k).linked){
-				adddata << " b=\"1\"";
-			}
-			if (oinfo.spawnerid > -1){
-				adddata << ">";
-
-				ObjectInfo sinfo = ObjectsTable::getItemInfo(oinfo.spawnerid);
-				if (sinfo.spawnerid == -1){
-					//Not an item for an object itself
-					if (sinfo.lot == 6416){
-						//This is a custom Rocket
-						RocketInfo rinfo = ObjectsTable::getRocketInfo(sinfo.objid);
-						if (rinfo.cockpit_template > 0 && rinfo.engine_template > 0 && rinfo.nose_cone_template > 0){
-							//adddata << "<x ma=\"0:1:" << rinfo.nose_cone_template << "+1:" << rinfo.cockpit_template << "+1:" << rinfo.engine_template << "\"/>";
-							Logger::log("USER", "CHARDATA", "Adding Rocket");
+					ObjectInfo sinfo = ObjectsTable::getItemInfo(oinfo.spawnerid); //gnerates spawnerId from spawnerId <-- This should be objid but objid would result in a mess of bugs.
+					if (sinfo.spawnerid == -1) {
+						//Not an item for an object itself
+						if (sinfo.lot == 6416) {
+							//This is a custom Rocket
+							RocketInfo rinfo = ObjectsTable::getRocketInfo(sinfo.objid);
+							if (rinfo.cockpit_template > 0 && rinfo.engine_template > 0 && rinfo.nose_cone_template > 0) {
+								// NOTE: Who ever commented this out - don't forget, that you commented this.
+								//adddata << "<x ma=\"0:1:" << rinfo.nose_cone_template << "+1:" << rinfo.cockpit_template << "+1:" << rinfo.engine_template << "\"/>";
+								Logger::log("USER", "CHARDATA", "Adding Rocket");
+							}
 						}
 					}
-				}
 
-				adddata << "</i>";
+					adddata << "</i>";
+				}
+				else {
+					adddata << "/>";
+				}
+				writeRaw(xml, adddata.str());
 			}
-			else{
-				adddata << "/>";
-			}
-			writeRaw(xml, adddata.str());
 		}
+		writeRaw(xml, "</in>");
 	}
-	writeRaw(xml, "</in>");
 	writeRaw(xml, "</items>");
 	writeRaw(xml, "</inv>");
 	writeRaw(xml, "<mf/>");

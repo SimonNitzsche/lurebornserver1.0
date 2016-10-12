@@ -38,6 +38,8 @@ bool Worlds::loadWorld(SystemAddress address, ZoneId zone, COMPONENT1_POSITION p
 	return true;
 }
 
+int Instances::currentInstance;
+
 int Instances::registerInstance(SystemAddress address){
 	//TODO: We do this a little differently to not rocket up the instanceids,
 	//We should delete and recreate the instance once it has more content then just the address

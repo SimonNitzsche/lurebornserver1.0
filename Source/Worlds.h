@@ -17,6 +17,7 @@ class Instances{
 public:
 	//Registers the instance for this address, clears up sessions if necessary
 	static int registerInstance(SystemAddress address);
+	static int currentInstance;
 };
 
 class ObjectsManager{

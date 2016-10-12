@@ -190,3 +190,21 @@ public:
 	std::wstring getShortDescription();
 	std::wstring getSyntax();
 };
+
+class MacroCommandHandler : public ChatCommandHandler {
+public:
+	void handleCommand(SessionInfo *s, std::vector<std::wstring> * params);
+	std::vector<std::wstring> getCommandNames();
+	std::wstring getDescription();
+	std::wstring getShortDescription();
+	std::wstring getSyntax();
+};
+
+class TestCommandHandler : public ChatCommandHandler {
+public:
+	void handleCommand(SessionInfo *s, std::vector<std::wstring> * params);
+	std::vector<std::wstring> getCommandNames();
+	std::wstring getDescription();
+	std::wstring getShortDescription();
+	std::wstring getSyntax();
+};

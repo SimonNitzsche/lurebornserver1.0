@@ -1,0 +1,4 @@
+/resettooltipflags
+/resetmissions
+/reloadscripts
+/reloadui

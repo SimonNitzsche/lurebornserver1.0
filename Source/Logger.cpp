@@ -13,18 +13,7 @@ std::string Logger::logfile = "";
 
 void Logger::log(const std::string& source, const std::string& role, const std::string& message, LogLevels logLevel){
 	if (logLevel <= activeLogLevel){
-		std::stringstream out;
-		time_t t = time(0);   // get time now
-		struct tm * now = localtime(&t);
-		out << "[";
-		out << std::setfill('0') << std::setw(2) << now->tm_hour;
-		out << ':';
-		out << std::setfill('0') << std::setw(2) << now->tm_min;
-		out << "] ";
-		out << "[" << source << "] ";
-		if (role != ""){
-			out << "[" << role << "] ";
-		}
+		std::stringstream out = getLogStream(source, role);
 		out << message << std::endl;
 		std::string msg = out.str();
 		if (!Logger::muted)	std::cout << msg; else Logger::logBuffer.push_back(msg);
@@ -35,6 +24,23 @@ void Logger::log(const std::string& source, const std::string& role, const std::
 			file.close();
 		}
 	}
+}
+
+//I need this seperated part in another location, so i made a fuction for it; -Simon
+std::stringstream Logger::getLogStream(const std::string& source, const std::string& role) {
+	time_t t = time(0);   // get time now
+	struct tm * now = localtime(&t);
+	std::stringstream out;
+	out << "[";
+	out << std::setfill('0') << std::setw(2) << now->tm_hour;
+	out << ':';
+	out << std::setfill('0') << std::setw(2) << now->tm_min;
+	out << "] ";
+	out << "[" << source << "] ";
+	if (role != "") {
+		out << "[" << role << "] ";
+	}
+	return out;
 }
 
 void Logger::logError(const std::string& source, const std::string&role, const std::string& action, const std::string& error){
