@@ -1,6 +1,6 @@
-<a href="https://codeclimate.com/repos/580214cd5f2d44049b000ac2/feed"><img src="https://codeclimate.com/repos/580214cd5f2d44049b000ac2/badges/3ee4b8ea7c83fd7f7318/gpa.svg" /></a>
-<a href="https://codeclimate.com/repos/580214cd5f2d44049b000ac2/coverage"><img src="https://codeclimate.com/repos/580214cd5f2d44049b000ac2/badges/3ee4b8ea7c83fd7f7318/coverage.svg" /></a>
-<a href="https://codeclimate.com/repos/580214cd5f2d44049b000ac2/feed"><img src="https://codeclimate.com/repos/580214cd5f2d44049b000ac2/badges/3ee4b8ea7c83fd7f7318/issue_count.svg" /></a>
+[![Code Climate](https://codeclimate.com/repos/580214cd5f2d44049b000ac2/badges/3ee4b8ea7c83fd7f7318/gpa.svg)](https://codeclimate.com/repos/580214cd5f2d44049b000ac2/feed)
+[![Test Coverage](https://codeclimate.com/repos/580214cd5f2d44049b000ac2/badges/3ee4b8ea7c83fd7f7318/coverage.svg)](https://codeclimate.com/repos/580214cd5f2d44049b000ac2/coverage)
+[![Issue Count](https://codeclimate.com/repos/580214cd5f2d44049b000ac2/badges/3ee4b8ea7c83fd7f7318/issue_count.svg)](https://codeclimate.com/repos/580214cd5f2d44049b000ac2/feed)
 
 # LUNI  
 
@@ -47,4 +47,4 @@ There are different kinds of "crashes" that can happen, so please pay attention 
 - The server displays an error in the log
 - The server does not recieve anything/shows nothing in the log
 
-> The LEGO® Group has not endorsed or authorized the operation of this game and is not liable for any safety issues in relation to the operation of this game. All files are under the General Public License, version 3, and are only for use on a non-commercial basis.
+> The LEGOÂ® Group has not endorsed or authorized the operation of this game and is not liable for any safety issues in relation to the operation of this game. All files are under the General Public License, version 3, and are only for use on a non-commercial basis.
