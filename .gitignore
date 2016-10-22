@@ -44,6 +44,9 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+#VS-Database
+*.VC.db
+
 #LUNI stuff
 
 logs/
