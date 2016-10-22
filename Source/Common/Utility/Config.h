@@ -7,6 +7,7 @@ struct Settings{
 	std::string redirect_ip = "";
 	bool log_file = false;
 	bool use_encryption = false;
+	int slots = 16;
 };
 
 struct MySQLSettings{

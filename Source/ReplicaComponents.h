@@ -3,6 +3,8 @@
 #include "RakNet\BitStream.h"
 #include "ReplicaDefinitions.h"
 
+#include "CharactersDB.h"
+
 #include <vector>
 
 //Abstract Base Class -> Interface
@@ -370,8 +372,11 @@ class CollectibleComponent : public ReplicaComponent {
 private:
 	unsigned long LOTemplate;
 public:
-	//unsigned long getTemplate();
-	//void setTemplate(unsigned long lot);
+	CollectibleComponent(unsigned short lot);
+	unsigned short getTemplate();
+	void setTemplate(unsigned short lot);
+	void writeToPacket(RakNet::BitStream * packet, REPLICA_PACKET_TYPE packetType);
+	unsigned int getComponentID();
 };
 
 #pragma endregion
@@ -614,6 +619,20 @@ public:
 	void setData4_4_2(unsigned long data4_4_2);
 	void setData5(bool data5);
 };
+#pragma endregion
+
+#pragma region RebuildComponent (Component 48)
+
+class RebuildComponent : public ReplicaComponent {
+private:
+	
+public:
+	RebuildComponent();
+	~RebuildComponent();
+	void writeToPacket(RakNet::BitStream *packet, REPLICA_PACKET_TYPE packetType);
+	unsigned int getComponentID();
+};
+
 #pragma endregion
 
 #pragma region SwitchComponent (Component 49)

@@ -2,7 +2,9 @@
 #include "ReplicaComponents.h"
 #include "ReplicaObject.h"
 #include "Replica.h"
+#include "GenericObject.h"
 
 class ImaginationOrb : public ReplicaObject {
-	ImaginationOrb(unsigned long LOT, unsigned long objectID);
+public:
+	ImaginationOrb(unsigned long LOT, unsigned short collectibleID, long long objectID);
 };

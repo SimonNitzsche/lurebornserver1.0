@@ -17,7 +17,7 @@
 #include "Characters.h"
 #include "worldLoop.h"
 #include "Vector3.h"
-#include "Vector4.h"
+#include "GenericObject.h"
 #include "Interact.h"
 
 #include <map>
@@ -1717,5 +1717,33 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 				WorldServer::sendPacket(ef, s->addr);
 			}
 		} break;
+		case HAS_BEEN_COLLECTED: {
+			long long playerid;
+			data->Read(playerid);
+
+			PlayerObject* po = (PlayerObject*)ObjectsManager::getObjectByID(s.activeCharId);
+
+			std::vector<ReplicaObject*> oow = ObjectsManager::getObjectsOfWorld(s.zone);
+			GenericObject *geo = NULL;
+			for (int i = 0; i < oow.size(); i++) {
+				GenericObject *go = (GenericObject*)oow.at(i);
+				if (go != NULL) {
+					if (go->inRange(po, 5)&&geo==NULL) {
+						geo = go;
+						break;
+					}
+				}
+			}
+			if (geo != NULL) {
+				Chat::sendChatMessage(s, s.activeCharId, L"Picked up Collectible " + std::to_wstring(geo->objid));
+			}
+			else {
+				Chat::sendChatMessage(s, s.activeCharId, L"No collectible found!");
+			}
+		} break;
+		default:
+		{
+			Logger::log("GMSG", "PARSE", "GameMessage not handled: " + std::to_string(messageID));
+		}
 	}
 }

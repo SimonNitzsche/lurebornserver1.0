@@ -150,7 +150,9 @@ int main(int argc, char* argv[]) {
 	std::cout << std::endl;
 	inset(15); std::cout << "--------------------------------------" << std::endl;
 	color(7); std::cout << std::endl << std::endl;
-	
+	inset(15); std::cout << "Built for the LUR and LURTI Server    " << std::endl;
+	inset(15); std::cout << "--------------------------------------" << std::endl;
+	color(7); std::cout << std::endl << std::endl;
 	std::cout << " Server Log" << std::endl;
 	std::cout << "-----------------------------------------" << std::endl;
 	Logger::setLogFile("server.log");
@@ -235,16 +237,20 @@ int main(int argc, char* argv[]) {
 	}
 	#endif
 
+	Logger::log("MAIN", "CONF", "Maximum incoming Connections: " + std::to_string(settings.slots));
+
 	//Clear sessions on exit
-	std::atexit(SessionsTable::ClearSessions);
+	//std::atexit(SessionsTable::ClearSessions);
 
 	// Start the two new threads (Auth and World servers)
 	if (Role == ROLE_AUTH){
+		Logger::log("MAIN", "INIT", "Init Auth Server...");
 		CONNECT_INFO auth;
 		config->setServerSettings(auth, settings, setting);
 		AuthLoop(&auth);
 	}
 	if (Role == ROLE_WORLD){
+		Logger::log("MAIN", "INIT", "Init World Server...");
 		CONNECT_INFO world;
 		config->setServerSettings(world, settings, setting);
 		WorldLoop(&world);

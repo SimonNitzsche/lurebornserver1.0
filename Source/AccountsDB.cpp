@@ -395,6 +395,7 @@ SessionInfo SessionsTable::quit(long long charid){
 		return SessionInfo();
 	}
 }
+
 // TODO: Simplify if/else
 SystemAddress SessionsTable::findCharacter(long long charid){
 	std::stringstream str;

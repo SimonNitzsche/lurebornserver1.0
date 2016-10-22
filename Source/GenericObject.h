@@ -6,6 +6,7 @@
 #include "SpawnerObject.h"
 #include "LootObject.h"
 #include "SQLite\sqdb.h"
+#include "PlayerObject.h"
 
 #include <string>
 
@@ -19,10 +20,11 @@ private:
 
 	void initializeObject(unsigned long lot, COMPONENT1_POSITION pos, COMPONENT1_ROTATION rot, COMPONENT1_VELOCITY vel, COMPONENT1_VELOCITY_ANGULAR vel_ang);
 public:
-	GenericObject(unsigned long lot, unsigned long currentZone, COMPONENT1_POSITION pos, COMPONENT1_ROTATION rot, COMPONENT1_VELOCITY vel, COMPONENT1_VELOCITY_ANGULAR vel_ang);
+	GenericObject(unsigned long lot, unsigned long currentZone, COMPONENT1_POSITION pos, COMPONENT1_ROTATION rot=COMPONENT1_ROTATION(0,0,0,0), COMPONENT1_VELOCITY vel=COMPONENT1_VELOCITY(0,0,0), COMPONENT1_VELOCITY_ANGULAR vel_ang=COMPONENT1_VELOCITY_ANGULAR(0,0,0));
 	~GenericObject();
 
 	long long getObjectID();
+	bool inRange(PlayerObject * plr, float radius);
 	long long getSpawnerObjectID();
 	unsigned long getLOT();
 

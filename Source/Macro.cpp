@@ -49,10 +49,12 @@ int countDir() {
 }
 
 void Macro::ExecuteMacro(string macroFile, SessionInfo *s) {
-	std::vector<string> scl = Macro::macros.at(macroFile);
-	if (scl.size() > 0)
-		for each (string sc in scl)
-			ChatCommandManager::handleCommand(std::wstring(sc.begin(),sc.end()), s);
+	try {
+		std::vector<string> scl = Macro::macros.at(macroFile);
+		if (scl.size() > 0)
+			for each (string sc in scl)
+				ChatCommandManager::handleCommand(std::wstring(sc.begin(), sc.end()), s);
+	}catch(const exception&){}
 }
 
 void Macro::EchoMacros(long long charId) {

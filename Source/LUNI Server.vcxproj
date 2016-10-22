@@ -106,6 +106,7 @@
     <ClInclude Include="EnemyObject.h" />
     <ClInclude Include="EnvironmentalObject.h" />
     <ClInclude Include="GenericObject.h" />
+    <ClInclude Include="ImaginationOrb.h" />
     <ClInclude Include="Interact.h" />
     <ClInclude Include="LootObject.h" />
     <ClInclude Include="Macro.h" />
@@ -133,6 +134,7 @@
     <ClInclude Include="IniReader.h" />
     <ClInclude Include="InventoryDB.h" />
     <ClInclude Include="LDF.h" />
+    <ClCompile Include="ImaginationOrb.cpp" />
     <ClCompile Include="Interact.cpp" />
     <ClCompile Include="LiveUpdateDB.h" />
     <ClInclude Include="Logger.h" />
@@ -150,6 +152,7 @@
     <ClInclude Include="serverLoop.h" />
     <ClInclude Include="Social.h" />
     <ClInclude Include="StaticObjectsDB.h" />
+    <ClInclude Include="TimedEvent.h" />
     <ClInclude Include="TimeUtil.h" />
     <ClInclude Include="UtfConverter.h" />
     <ClInclude Include="Vector3.h" />
@@ -203,6 +206,7 @@
     <ClCompile Include="CharPackets.cpp" />
     <ClCompile Include="Social.cpp" />
     <ClCompile Include="StaticObjectsDB.cpp" />
+    <ClCompile Include="TimedEvent.cpp" />
     <ClCompile Include="UtfConverter.cpp" />
     <ClCompile Include="WebAPIService.cpp" />
     <ClCompile Include="World.cpp" />

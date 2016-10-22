@@ -11,7 +11,7 @@ Configuration::Configuration(std::string configFile){
 	bool plain = exists(configFile);
 	std::string locals = configFile.insert(0, ".\\");
 	bool local = exists(locals);
-	bool cfg = exists(".\\config.ini");
+	std::vector<bool> cfg = {exists("..\Env\config.ini"),exists(".\\config.ini")};
 
 	//char *cfile;
 
@@ -20,8 +20,10 @@ Configuration::Configuration(std::string configFile){
 	}
 	else{
 		if (!plain){
-			if (cfg){
+			if (cfg[1]){
 				configFile = ".\\config.ini";
+			}else if(cfg[0]) {
+				configFile = "..\Env\config.ini";
 			}
 			else{
 				configFile = "";
@@ -52,6 +54,7 @@ Settings Configuration::getSettings(){
 	settings.redirect_ip = Settings->getStringValue("redirect_ip", "127.0.0.1");
 	settings.use_encryption = Settings->getBoolValue("use_encryption", false);
 	settings.log_file = Settings->getBoolValue("log_file", false);
+	settings.slots = Settings->getIntValue("slots", 16);
 	return settings;
 }
 
@@ -59,7 +62,7 @@ MySQLSettings Configuration::getMySQLSettings(){
 	MySQLSettings mysql;
 	IniSection * MySQL = this->ini->getSection("MYSQL");
 	mysql.host = MySQL->getStringValue("host", "localhost");
-	mysql.database = MySQL->getStringValue("database", "luni2");
+	mysql.database = MySQL->getStringValue("database", "luni");
 	mysql.username = MySQL->getStringValue("username", "root");
 	mysql.password = MySQL->getStringValue("password", "");
 	return mysql;
@@ -77,4 +80,5 @@ void Configuration::setServerSettings(CONNECT_INFO& connection, Settings& settin
 	strcpy(connection.redirectIp, settings.redirect_ip.c_str());
 	connection.useEncryption = settings.use_encryption;
 	connection.logFile = settings.log_file;
+	connection.slots = settings.slots;
 }

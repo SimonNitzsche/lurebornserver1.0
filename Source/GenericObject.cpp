@@ -197,7 +197,7 @@ void GenericObject::initializeObject(unsigned long lot, COMPONENT1_POSITION pos,
 
 			break;
 		case COLLECTIBLE_COMPONENT:
-
+			list.push_back(new CollectibleComponent(lot));
 			break;
 		case BLUEPRINT_COMPONENT:
 
@@ -270,7 +270,7 @@ void GenericObject::initializeObject(unsigned long lot, COMPONENT1_POSITION pos,
 
 			break;
 		case REBUILD_COMPONENT:
-
+			list.push_back(new RebuildComponent());
 			break;
 		case SWITCH_COMPONENT:
 			list.push_back(new SwitchComponent());
@@ -407,8 +407,12 @@ void GenericObject::initializeObject(unsigned long lot, COMPONENT1_POSITION pos,
 }
 
 COMPONENT1_POSITION GenericObject::getPosition() {
-	if (this->getComponent(SIMPLE_PHYSICS_COMPONENT) != NULL){
+	if(this->componentAttached(SIMPLE_PHYSICS_COMPONENT) && this->getComponent(SIMPLE_PHYSICS_COMPONENT) != NULL) {
 		SimplePhysicsComponent * phy = (SimplePhysicsComponent *)this->getComponent(SIMPLE_PHYSICS_COMPONENT);
+		return COMPONENT1_POSITION(phy->getPosition().posX, phy->getPosition().posY, phy->getPosition().posZ);
+	}
+	else if (this->componentAttached(PHANTOM_PHYSICS_COMPONENT) && this->getComponent(PHANTOM_PHYSICS_COMPONENT) != NULL) {
+		PhantomPhysicsComponent * phy = (PhantomPhysicsComponent *)this->getComponent(PHANTOM_PHYSICS_COMPONENT);
 		return COMPONENT1_POSITION(phy->getPosition().posX, phy->getPosition().posY, phy->getPosition().posZ);
 	}
 }
@@ -419,6 +423,16 @@ DestructibleComponent *GenericObject::getDestructibleComponent(){ return (Destru
 InventoryComponent *GenericObject::getInventoryComponent(){ return (InventoryComponent *)this->getComponent(17); }
 long long GenericObject::getObjectID() {
 	return this->objid;
+}
+
+bool GenericObject::inRange(PlayerObject* plr, float radius) {
+	COMPONENT1_POSITION pp = plr->getComponent1()->getPosition();
+	COMPONENT1_POSITION op = getPosition();
+	if (pp.x<(op.x + radius) && pp.x>(op.x - radius))
+		if (pp.z<(op.z + radius) && pp.z>(op.z - radius))
+			if (pp.y<(op.y + radius+2.5) && pp.y>(op.y - (radius+2.5)))
+				return true;
+	return false;
 }
 
 

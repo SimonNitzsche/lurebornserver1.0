@@ -1,6 +1,7 @@
 #pragma once
 #include "CharactersDB.h"
 #include "RakNet\RakNetTypes.h"
+#include "AccountsDB.h"
 #include <string>
 
 enum FriendRequestResponse : unsigned char{
@@ -33,9 +34,11 @@ public:
 
 class Chat{
 public:
-	static void sendChatMessage(SystemAddress addr, std::wstring message, std::wstring sender = L"", bool isMythran = false, bool displayChatBubble=true);
+	static void sendChatMessage(SystemAddress addr, std::wstring message, std::wstring sender = L"", bool isMythran=false, std::vector<byte> channel = { 0x4,0x0,0x0 });
 	static void sendChatMessage(long long reciever, std::wstring message, std::wstring sender = L"", bool isMythran = false);
+	static void sendChatMessage(SessionInfo sender, long long reciever, std::wstring message);
 	static void broadcastChatMessage(unsigned short zone, std::wstring message, std::wstring sender = L"", bool isMythran = false);
+	static void broadcastChatMessage(SessionInfo sender, long long reciever, std::wstring message);
 	static void sendMythranInfo(long long reciever, std::string message, std::string title);
 };
 

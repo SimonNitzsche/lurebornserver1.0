@@ -39,6 +39,13 @@ ReplicaComponent *ReplicaObject::getComponent(unsigned int componentid){
 	}
 }
 
+bool ReplicaObject::componentAttached(unsigned int componentid) {
+	for each(ReplicaComponent* comp in components)
+		if (comp->getComponentID() == componentid)
+			return true;
+	return false;
+}
+
 void ReplicaObject::addComponent(ReplicaComponent * component){
 	this->components.push_back(component);
 }
@@ -134,4 +141,8 @@ ReplicaReturnResult ReplicaObject::Deserialize(RakNet::BitStream *inBitStream, R
 	//TODO implement deserialize once the Serialization isn't static any more
 	Logger::log("REPL", "OBJECT", "Client sent serialize", LOG_DEBUG);
 	return REPLICA_PROCESSING_DONE;
+}
+
+bool ReplicaObject::sameWorldAsPlayer(int plrZone) {
+	return(int(world.zone) == plrZone);
 }

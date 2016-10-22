@@ -276,22 +276,24 @@ void StaticObjectsDB::spawnChoicebuilds() {
 		}
 	}
 	cout << getPercString(fs, 100) << "\n";*/
-	unsigned long objectLOT = 6604;
-	unsigned long targetLOT = 7796;
+	unsigned long targetLOT = 6604;
+	unsigned long objectLOT = 7796;
 	int zone = 1200;
-	double x = -350.726409912109;
+	double x = -362.5623779296875;
 	double y = 285.451385498047;
 	double z = 74.3901977539062;
 	double rX = 0;
-	double rY = 0;
+	double rY = 0.7138688564300537;
 	double rZ = 0;
-	double rW = 1;
+	double rW = 0.7002794146537781;
 
+	//The thing wich gets built
 	EnvironmentalObject * qb = new EnvironmentalObject(targetLOT, zone);
 
 	ObjectsManager::registerObject(qb);
 	ObjectsManager::create(qb);
 
+	//The thing wich builds the thing
 	GenericObject * quickbuild = new GenericObject(objectLOT, zone, COMPONENT1_POSITION(x,y,z), COMPONENT1_ROTATION(rX,rY,rZ,rW), COMPONENT1_VELOCITY(), COMPONENT1_VELOCITY_ANGULAR());
 
 	//quickbuild->target = qb->getObjectID();

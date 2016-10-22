@@ -16,6 +16,7 @@ struct CONNECT_INFO {
 	char redirectIp[16];// AnIPv4 address can only occupy up to 15 bytes, do we assume a 16th byte as end char?
 	short redirectPort;	// Ports occupy 2 bytes - This is the redirect port
 	short listenPort; // Port to listen on
+	int slots; //Maximum incoming connections
 
 	bool useEncryption; // Should the server use encryption or not
 	bool logFile; // Should the server log a file with its information

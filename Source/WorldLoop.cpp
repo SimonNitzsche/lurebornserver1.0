@@ -244,8 +244,8 @@ void WorldLoop(CONNECT_INFO* cfg) {
 		Instances::currentInstance = Instances::registerInstance(ServerAddress);
 	} else exit(2);
 
-	// Set max incoming connections to 16
-	WorldLoop::rakServer->SetMaximumIncomingConnections(16);
+	// Set max incoming connections
+	WorldLoop::rakServer->SetMaximumIncomingConnections(cfg->slots);
 
 	// If msgFileHandler is not NULL, save logs of char server
 	if (msgFileHandler != NULL) msgFileHandler->StartLog(".\\logs\\world");
@@ -303,6 +303,7 @@ void WorldLoop(CONNECT_INFO* cfg) {
 	ChatCommandManager::registerCommands(new SmashCommandHandler());
 	ChatCommandManager::registerCommands(new FlagCommandHandler());
 	ChatCommandManager::registerCommands(new MacroCommandHandler());
+	ChatCommandManager::registerCommands(new KickCommandHandler());
 	ChatCommandManager::registerCommands(new TestCommandHandler());
 
 	bool LUNI_WRLD = true;
@@ -313,21 +314,26 @@ void WorldLoop(CONNECT_INFO* cfg) {
 
 	Macro::LoadMacros();
 	StaticObjectsDB::loadAll();
-	
+
+	//VE - Imagination Orbs
+	StaticObjectsDB::initDone = false;
+	ObjectsManager::registerObject(new GenericObject(4768, 1000, COMPONENT1_POSITION(-281.1628112792969, 606.0819702148438,32.6438102722168  )));
+	ObjectsManager::registerObject(new GenericObject(4768, 1000, COMPONENT1_POSITION(-254.1886444091797, 601.4710083007812,-75.30770874023438)));
+	ObjectsManager::registerObject(new GenericObject(4768, 1000, COMPONENT1_POSITION(-281.0174865722656, 601.5693359375,   -75.13247680664062)));
+	ObjectsManager::registerObject(new GenericObject(4768, 1000, COMPONENT1_POSITION(-267.5953063964844, 606.9742431640625,-97.90109252929688)));
+	ObjectsManager::registerObject(new GenericObject(4768, 1000, COMPONENT1_POSITION(-254.92630004882812,606.8737182617188,32.47333908081055 )));
+	ObjectsManager::registerObject(new GenericObject(4768, 1000, COMPONENT1_POSITION(-267.8657531738281, 608.3709716796875,24.153282165527344)));
+	StaticObjectsDB::initDone = true;
+
 	// This will be used in the saving of packets below...
-	try {
-		time_t nextWAPIrun = time(0);
-		LiveUpdateTable::createIfNotExists();
-		while (LUNI_WRLD) {
-			WorldLoopThread(buffer, LUNI_WRLD, buffer_started, i);
-			if (time(0)>nextWAPIrun) {
-				WebAPIService::class_thread();
-				nextWAPIrun = time(0) + 10; //Time until next LiveUpdateCheck
-			}
+	time_t nextWAPIrun = time(0);
+	LiveUpdateTable::createIfNotExists();
+	while (LUNI_WRLD) {
+		WorldLoopThread(buffer, LUNI_WRLD, buffer_started, i);
+		if (time(0)>nextWAPIrun) {
+			WebAPIService::class_thread();
+			nextWAPIrun = time(0) + 10; //Time until next LiveUpdateCheck
 		}
-	}
-	catch (Exception e) {
-		Logger::log("WRLD", "THREAD", "Prevented server to crash");
 	}
 
 	int instanceid = InstancesTable::getInstanceId(ServerAddress);
@@ -468,8 +474,6 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 			SessionInfo s = SessionsTable::getClientSession(systemAddress);
 			Logger::log("WRLD", "PARSER", "Requesting Friends-List");
 			Friends::handleWorldJoin(s.activeCharId);
-			//Friends::sendFriendsList(usr->GetCurrentCharacter()->charobjid);
-			//Friends::broadcastFriendLogin(usr->GetCurrentCharacter()->charobjid);
 		}
 			break;
 		case ChatPacketID::GET_IGNORE_LIST:
@@ -733,7 +737,16 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 		// 14
 		case WorldPacketID::CLIENT_GENERAL_CHAT_MESSAGE:
 		{
-			data->SetReadOffset(data->GetReadOffset() + 24); //3 bytes channel?
+			//data->SetReadOffset(data->GetReadOffset() + 24); //3 bytes channel?
+			byte cb1;
+			byte cb2;
+			byte cb3;
+			data->Read(cb1);
+			data->Read(cb2);
+			data->Read(cb3);
+
+			Logger::log("WRLD", "CLIENT_GENERAL_CHAT_MESSAGE", "Channel: " + std::to_string(cb1) + " " + std::to_string(cb2) + " " + std::to_string(cb3));
+
 			unsigned long length;
 			data->Read(length);
 			std::vector<wchar_t> messageVector;
@@ -780,6 +793,7 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 				}
 				if (za.zoneid == 1000){
 					pos = COMPONENT1_POSITION(-625.303, 613.414, -25.6505);
+					rot = COMPONENT1_ROTATION(0, 0.7, 0, 0.7);
 				}
 
 				WorldServerPackets::CreateCharacter(systemAddress, objid);
@@ -840,6 +854,8 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 					LootObject *lootObj = new LootObject(equipLOT, equip.at(k));
 					ObjectsManager::registerObject(lootObj);
 				}
+
+				player->getComponent4()->setStats(StatsTable::getPlayerStats(s.activeCharId));
 
 				AccountsTable::setFrontChar(player->objid);
 

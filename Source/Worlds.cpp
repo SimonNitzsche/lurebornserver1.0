@@ -7,6 +7,13 @@
 #include "Logger.h"
 #include "PlayerObject.h"
 
+#include <algorithm>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+
 bool Worlds::loadWorld(SystemAddress address, ZoneId zone, COMPONENT1_POSITION pos, unsigned short instance, unsigned long clone){
 	RakNet::BitStream * stream = WorldServer::initPacket(RemoteConnection::CLIENT, ClientPacketID::MSG_CLIENT_LOAD_STATIC_ZONE);
 
@@ -71,6 +78,17 @@ ReplicaObject * ObjectsManager::getObjectByID(long long objid){
 	std::unordered_map<long long, ReplicaObject *>::iterator it = objects.find(objid);
 	if (it != objects.end()) return it->second;
 	else return NULL;
+}
+
+std::vector<ReplicaObject*> ObjectsManager::getObjectsOfWorld(unsigned short worldid) {
+	std::vector<ReplicaObject*> o;
+	for (std::unordered_map<long long, ReplicaObject *>::iterator it = objects.begin(); it != objects.end(); ++it) {
+		try {
+			if (it->second->world.zone == worldid)
+				o.push_back(it->second);
+		}catch(const std::exception&){}
+	}
+	return o;
 }
 
 //This initiates creation

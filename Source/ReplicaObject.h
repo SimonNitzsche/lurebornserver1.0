@@ -2,6 +2,7 @@
 #include "ReplicaComponents.h"
 #include "RakNet\Replica.h"
 #include "World.h"
+#include "Vector3.h"
 
 #include <vector>
 
@@ -30,6 +31,7 @@ public:
 	long long getObjectID();
 
 	ReplicaComponent *getComponent(unsigned int componentid);
+	bool componentAttached(unsigned int componentid);
 	void addComponent(ReplicaComponent * component);
 	void writeToPacket(RakNet::BitStream * packet, REPLICA_PACKET_TYPE packetType);
 	void deleteComponents();
@@ -41,5 +43,6 @@ public:
 	ReplicaReturnResult ReceiveScopeChange(RakNet::BitStream *inBitStream, SystemAddress systemAddress, RakNetTime timestamp);
 	ReplicaReturnResult Serialize(bool *sendTimestamp, RakNet::BitStream *outBitStream, RakNetTime lastSendTime, PacketPriority *priority, PacketReliability *reliability, RakNetTime currentTime, SystemAddress systemAddress, unsigned int &flags);
 	ReplicaReturnResult Deserialize(RakNet::BitStream *inBitStream, RakNetTime timestamp, RakNetTime lastDeserializeTime, SystemAddress systemAddress);
+	bool sameWorldAsPlayer(int plrZone);
 	int GetSortPriority(void) const { return 0; }
 };

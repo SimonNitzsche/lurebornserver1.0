@@ -1,10 +1,4 @@
 #include "CharactersDB.h"
-#include "Database.h"
-#include "Logger.h"
-#include "Mission.h"
-
-#include <sstream>
-#include <iostream>
 
 long long CharactersTable::getObjidFromCharacter(std::string name){
 	std::stringstream iq;
@@ -576,4 +570,54 @@ void MailsTable::mapTable(std::unordered_map<std::string, compare<ColData *> *> 
 	Database::addColToMap(data, "attachment_count", new ColData("int(11)", false, "", "0", ""));
 	Database::addColToMap(data, "sent_time", new ColData("datetime", false, "", "CURRENT_TIMESTAMP", ""));
 	Database::addColToMap(data, "is_read", new ColData("tinyint(1)", false, "", "0", ""));
+}
+
+void StatsTable::mapTable(std::unordered_map<std::string, compare<ColData *> *> * data) {
+	//TODO: Add DatabaseTables
+}
+
+std::string StatsTable::getName() {return "statistics";}
+
+PLAYER_STATS StatsTable::getPlayerStats(long long charid, bool secondTry) {//secondTry to prevent infinity loop
+	PLAYER_STATS ps;
+	auto qr = Database::Query("SELECT * FROM `statistics` WHERE `player`=" + std::to_string(charid));
+	if (qr != NULL &&mysql_num_rows(qr) > 0) {
+		MYSQL_ROW row;
+		while (row = mysql_fetch_row(qr)) {
+			ps.CurrencyCollected = std::stoull(row[1]);
+			ps.BricksCollected = std::stoull(row[2]);
+			ps.SmashablesSmashed = std::stoull(row[3]);
+			ps.QuickBuildsCompleted = std::stoull(row[4]);
+			ps.EnemiesSmashed = std::stoull(row[5]);
+			ps.RocketsUsed = std::stoull(row[6]);
+			ps.MissionsCompleted = std::stoull(row[7]);
+			ps.PetsTamed = std::stoull(row[8]);
+			ps.ImaginationPowerupsCollected = std::stoull(row[9]);
+			ps.LifePowerupsCollected = std::stoull(row[10]);
+			ps.ArmorPowerupsCollected = std::stoull(row[11]);
+			ps.DistanceTraveled = std::stoull(row[12]);
+			ps.Smashed = std::stoull(row[13]);
+			ps.DamageTaken = std::stoull(row[14]);
+			ps.DamageHealed = std::stoull(row[15]);
+			ps.ArmorRepaired = std::stoull(row[16]);
+			ps.ImaginationRestored = std::stoull(row[17]);
+			ps.ImaginationUsed = std::stoull(row[18]);
+			ps.DistanceDriven = std::stoull(row[19]);
+			ps.AirborneInRacecar = std::stoull(row[20]);
+			ps.RacingImaginationPowerupsCollected = std::stoull(row[21]);
+			ps.RacingImaginationCratesSmashed = std::stoull(row[22]);
+			ps.RaceCarBoostActivated = std::stoull(row[23]);
+			ps.WrecksInRaceCar = std::stoull(row[24]);
+			ps.RacingSmashablesSmashed = std::stoull(row[25]);
+			ps.RacesFinished = std::stoull(row[26]);
+			ps.Place1RacesFinishes = std::stoull(row[27]);
+		}
+	}
+	else {
+		if (!secondTry) {
+			Database::Query("INSERT INTO `statistics` (player) VALUES(" + std::to_string(charid) + ")");
+			ps = getPlayerStats(charid, true);
+		}
+	}
+	return ps;
 }

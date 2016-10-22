@@ -314,6 +314,10 @@ void TestmapCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstri
 		if (flag){
 			unsigned short argumentValue = std::stoi(params->at(0));
 			ZoneId zone = static_cast<ZoneId>(argumentValue);
+			if (zone == ZoneId::AVANT_GARDENS&&AccountsTable::getRank(s->accountid)<2) {
+				Chat::sendMythranInfo(s->activeCharId, "We're doing some work here. Please come back later.", "Closed right now");
+				return;
+			}
 			Logger::log("WRLD", "CHAT", "Requesting teleport to " + std::to_string(argumentValue));
 			bool f = false;
 			if (getWorldTarget(zone).size() > 0){
@@ -828,6 +832,44 @@ std::wstring AdminCommandHandler::getSyntax(){
 	return L"<level>";
 }
 
+void KickCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params){
+	if (CharactersTable::getCharacterInfo(s->activeCharId).info.gmlevel > 0) {
+		if (params->size() > 0) {
+			SystemAddress addr = SessionsTable::findCharacter(CharactersTable::getObjidFromCharacter(std::string(params->at(0).begin(), params->at(0).end())));
+			if (addr != UNASSIGNED_SYSTEM_ADDRESS) {
+				RakNet::BitStream *bs = WorldServer::initPacket(RemoteConnection::GENERAL, 0x01);
+				bs->Write((unsigned long)0x0b);
+				WorldServer::sendPacket(bs, addr);
+				SessionsTable::logout(SessionsTable::getClientSession(addr).accountid);
+				for each (SessionInfo csi in SessionsTable::getClientsInInstance(Instances::currentInstance)) {
+					Chat::sendChatMessage(csi.addr, L"Player \"" + params->at(0) + L"\" got kicked by a moderator.");
+				}
+			}
+			else {
+				Chat::sendChatMessage(s->addr, L"Can't find Player \"" + params->at(0) + L"\".");
+			}
+		}
+		else {
+			Chat::sendChatMessage(s->addr, L"Syntax: /gmkick <PlayerName>");
+		}
+	}
+	else {
+		Chat::sendChatMessage(s->addr, L"You're not allowed to use this command.");
+	}
+}
+std::vector<std::wstring> KickCommandHandler::getCommandNames() {
+	return{ L"gmkick" };
+}
+std::wstring KickCommandHandler::getDescription() {
+	return L"Kicks a player from the Server";
+}
+std::wstring KickCommandHandler::getShortDescription() {
+	return L"Server-Kick";
+}
+std::wstring KickCommandHandler::getSyntax() {
+	return L"<playername>";
+}
+
 void SpawnCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
 	ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(s->activeCharId);
 	if (cinfo.info.gmlevel > 0){
@@ -968,8 +1010,14 @@ void SpawnCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring
 				}
 				else 
 				{
-					Chat::sendChatMessage(s->addr, L"Object unavailable to spawn!");
-					Chat::sendChatMessage(s->addr, L"Spawn Types are: NPC, ENEMIES");
+					COMPONENT1_POSITION pos = COMPONENT1_POSITION(player->getComponent1()->getPosition().x, player->getComponent1()->getPosition().y, player->getComponent1()->getPosition().z);
+					COMPONENT1_ROTATION rot = COMPONENT1_ROTATION(player->getComponent1()->getRotation().x, player->getComponent1()->getRotation().y, player->getComponent1()->getRotation().z, player->getComponent1()->getRotation().w);
+					GenericObject * go = new GenericObject(stoul(params->at(0)), cinfo.lastPlace.zoneID, pos, rot, COMPONENT1_VELOCITY(), COMPONENT1_VELOCITY_ANGULAR());
+
+					ObjectsManager::registerObject(go);
+					ObjectsManager::create(go);
+					//Chat::sendChatMessage(s->addr, L"Object unavailable to spawn!");
+					//Chat::sendChatMessage(s->addr, L"Spawn Types are: NPC, ENEMIES");
 				}
 
 				break;
@@ -1421,26 +1469,35 @@ std::wstring MacroCommandHandler::getShortDescription() {
 std::wstring MacroCommandHandler::getSyntax() {
 	return L"/macro list|exec/execute {<macroFileName>}";
 }
-
+#include "ImaginationOrb.h"
 void TestCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
 	if (AccountsTable::getRank(s->accountid) < 2) { return; }
-	/*
-	// Set Inventory Size params: tab, size
-	RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(s->activeCharId, 185);
-	bs->Write(std::stoi(params->at(0)));
-	bs->Write(std::stoi(params->at(1)));
-	*/
-	//Race Dialog
-	RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(s->activeCharId, DISPLAY_MESSAGE_BOX);
+	
+	//TESTING AREA
 
-	bs->Write((bool)false);
-	bs->Write((long long)s->activeCharId);
-	bs->Write(L"Race_Dialog");
-	bs->Write((int)3);
-	bs->Write("Want to Race?");
+	long long oid = ObjectID::generateObjectID();
+	
+	PlayerObject *player = (PlayerObject *)ObjectsManager::getObjectByID(s->activeCharId);
+	GenericObject* ioo = new GenericObject(4768,
+		player->world.zone,
+		player->getComponent1()->getPosition(),
+		COMPONENT1_ROTATION(0, 0, 0, 0),
+		COMPONENT1_VELOCITY(0, 0, 0),
+		COMPONENT1_VELOCITY_ANGULAR(0, 0, 0)//,
+		//child;
+	);
+
+	ObjectsManager::registerObject(ioo);
+	//ObjectsManager::create(ioo);
+
+	std::vector<SessionInfo> sess = SessionsTable::getClientsInWorld(ioo->world.zone);
+	for (std::vector<SessionInfo>::iterator it = sess.begin(); it != sess.end(); ++it) {
+		WorldServer::getRM()->Construct(ioo, false, it->addr, false);
+	}
+
+	//RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(s->activeCharId, DISPLAY_MESSAGE_BOX);
 	//bs->Write()
-
-	WorldServer::sendPacket(bs, s->addr);
+	//WorldServer::sendPacket(bs, s->addr);
 }
 
 std::vector<std::wstring> TestCommandHandler::getCommandNames() {

@@ -70,11 +70,11 @@ void WorldServerPackets::CreateCharacter(SystemAddress address, long long charob
 	RakNet::BitStream * packet = WorldServer::initPacket(RemoteConnection::CLIENT, WorldServerPacketIds::MSG_CLIENT_CREATE_CHARACTER);
 	LDF *ldf = new LDF();
 	ldf->writeS64(L"accountID", s.accountid);
-	ldf->writeS32(L"chatmode", 0); //0 - Normal, 1 - Super
-	ldf->writeBOOL(L"editor_enabled", false);
+	ldf->writeS32(L"chatmode", (cinfo.info.cloaked)?1:0); //0 - Normal, 1 - Super
+	ldf->writeBOOL(L"editor_enabled", true);
 	ldf->writeS32(L"editor_level", 0);
 	ldf->writeBOOL(L"freetrial", false);
-	ldf->writeS32(L"gmlevel", (cinfo.info.gmlevel>0?1:0)); //0 - Normal, 1 - Mythran
+	ldf->writeS32(L"gmlevel", (cinfo.info.cloaked)?1:0); //0 - Normal, 1 - Mythran
 	ldf->writeBOOL(L"legoclub", true);
 
 	unsigned long long levelid = cinfo.lastPlace.zoneID + (((unsigned long long) cinfo.lastPlace.mapInstance) << 16) + (((unsigned long long) cinfo.lastPlace.mapClone) << 32);

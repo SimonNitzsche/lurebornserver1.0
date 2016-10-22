@@ -234,6 +234,12 @@
     <ClInclude Include="Interact.h">
       <Filter>Header Files\Mechanics</Filter>
     </ClInclude>
+    <ClInclude Include="ImaginationOrb.h">
+      <Filter>Header Files\Replica</Filter>
+    </ClInclude>
+    <ClInclude Include="TimedEvent.h">
+      <Filter>Header Files\Mechanics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -387,6 +393,12 @@
       <Filter>Source Files\Mechanics</Filter>
     </ClCompile>
     <ClCompile Include="Interact.cpp">
+      <Filter>Source Files\Mechanics</Filter>
+    </ClCompile>
+    <ClCompile Include="ImaginationOrb.cpp">
+      <Filter>Source Files\Replica</Filter>
+    </ClCompile>
+    <ClCompile Include="TimedEvent.cpp">
       <Filter>Source Files\Mechanics</Filter>
     </ClCompile>
   </ItemGroup>

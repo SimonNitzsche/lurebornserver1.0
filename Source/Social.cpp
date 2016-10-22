@@ -8,6 +8,7 @@
 #include "UtfConverter.h"
 #include "Logger.h"
 #include "GameMessages.h"
+#include "Common.h"
 
 #include <iostream>
 
@@ -345,7 +346,7 @@ void Friends::handleFriendRequestResponse(long long responder, std::wstring name
 	}
 }
 
-void Chat::sendChatMessage(SystemAddress addr, std::wstring message, std::wstring sender, bool isMythran, bool displayChatBubble){
+void Chat::sendChatMessage(SystemAddress addr, std::wstring message, std::wstring sender, bool isMythran, std::vector<byte> channel) {
 	RakNet::BitStream *aw = WorldServer::initPacket(RemoteConnection::CHAT, ChatPacketID::GENERAL_CHAT_MESSAGE);
 	unsigned char u8 = 0;
 	unsigned short u16 = 0;
@@ -353,7 +354,7 @@ void Chat::sendChatMessage(SystemAddress addr, std::wstring message, std::wstrin
 	unsigned long long u64 = 0;
 
 	aw->Write(u64);
-	aw->Write((unsigned char)0x03); //chat channel (for future reference. Has to do with speech bubbles)  DEFAULT: 0x03
+	aw->Write((unsigned char)channel.at(0)); //chat channel (for future reference. Has to do with speech bubbles)  DEFAULT: 0x03
 	int len = message.size();
 	aw->Write((unsigned char)(len + 1));
 	aw->Write(u16);
@@ -378,25 +379,6 @@ void Chat::sendChatMessage(SystemAddress addr, std::wstring message, std::wstrin
 		aw->Write(message.at(k));
 	}
 	aw->Write(u16); //u16
-	if (displayChatBubble) {
-		RakNet::BitStream *cb = WorldServerPackets::InitGameMessage(SessionsTable::getClientSession(addr).activeCharId, GameMessage::NOTIFY_CLIENT_ZONE_OBJECT);
-		
-		std::wstring Ncommand = L"sendToclient_bubble";
-		
-		/*for (unsigned int k = 0; k < Ncommand.size(); k++){
-			cb->Write(Ncommand.at(k));
-		}*/
-		cb->Write(Ncommand);
-		
-		cb->Write((int)1); //param1
-		cb->Write((int)1); //param2
-		
-		cb->Write((long long)SessionsTable::getClientSession(addr).activeCharId);
-		std::string msgs((const char*)&message[0], sizeof(wchar_t)/sizeof(char)*message.size());
-		cb->Write(msgs);
-		
-		WorldServer::sendPacket(cb, addr);
-	}
 	WorldServer::sendPacket(aw, addr);
 }
 
@@ -411,14 +393,24 @@ void Chat::sendChatMessage(long long reciever, std::wstring message, std::wstrin
 	}
 }
 
+void Chat::sendChatMessage(SessionInfo sender, long long reciever, std::wstring message) {
+	CharacterInfo ci = CharactersTable::getCharacterInfo(sender.activeCharId).info;
+	Chat::sendChatMessage(reciever, message, std::wstring(ci.name.begin(),ci.name.end()), ci.cloaked);
+}
+
 void Chat::broadcastChatMessage(unsigned short zone, std::wstring message, std::wstring sender, bool isMythran){
 	std::vector<SessionInfo> sess = SessionsTable::getClientsInWorld(zone);
 	for (unsigned int k = 0; k < sess.size(); k++){
 		Logger::log("GAME", "CHAT", "Broadcast to " + std::to_string(sess.at(k).activeCharId), LOG_DEBUG);
 		if (sess.at(k).phase > SessionPhase::PHASE_AUTHENTIFIED){
-			Chat::sendChatMessage(sess.at(k).addr, message, sender, isMythran, true);
+			Chat::sendChatMessage(sess.at(k).addr, message, sender, isMythran);
 		}
 	}
+}
+
+void Chat::broadcastChatMessage(SessionInfo sender, long long reciever, std::wstring message) {
+	CharacterInfo ci = CharactersTable::getCharacterInfo(sender.activeCharId).info;
+	Chat::broadcastChatMessage(reciever, message, std::wstring(ci.name.begin(), ci.name.end()), ci.cloaked);
 }
 
 void Chat::sendMythranInfo(long long reciever, std::string message, std::string title){

@@ -184,7 +184,7 @@ void HandleUserLogin(RakPeerInterface* rakServer, Packet* packet, CONNECT_INFO* 
 		loginStatusPacket.localizationChar[2] = 0x00;
 
 		// Subscribed?
-		loginStatusPacket.firstLoginSubscription = 1;
+		loginStatusPacket.firstLoginSubscription = CharactersTable::getCharacters(accountid).size()>0?0:1;
 		loginStatusPacket.subscribed = 0;
 
 		loginStatusPacket.zeroLongLong = 0;
@@ -250,8 +250,8 @@ void AuthLoop(CONNECT_INFO* cfg) {
 		Logger::log("AUTH", "", "started! Listening on port " + std::to_string(cfg->listenPort));
 	} else QuitError("[AUTH] server init error!");
 
-	// Set max incoming connections to 8
-	rakServer->SetMaximumIncomingConnections(8);
+	// Set max incoming connections
+	rakServer->SetMaximumIncomingConnections(cfg->slots);
 
 	// If msgFileHandler is initalized, use it to log the server in ./logs/auth
 	if (msgFileHandler != NULL) msgFileHandler->StartLog(".\\logs\\auth");

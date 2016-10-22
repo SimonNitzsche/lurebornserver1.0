@@ -121,7 +121,7 @@ enum COMPONENT_TYPE : long {
 
 	UNKOWN_97_COMPONENT = 97, //only two in table, both are Starbase 3001 launcher related
 
-	UNKOWN_100_COMPONENT = 100, //brick donation component
+	UNKOWN_100_COMPONENT = 100, //brick donation component (Donations for building the NexusTower)
 
 	UNKOWN_102_COMPONENT = 102, //only two in table, commendation vendor component?
 	UNKOWN_103_COMPONENT, //only two in table, nothing in objects

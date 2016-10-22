@@ -125,6 +125,14 @@ class AdminCommandHandler : public ChatCommandHandler{
 	std::wstring getSyntax();
 };
 
+class KickCommandHandler : public ChatCommandHandler {
+	void handleCommand(SessionInfo *s, std::vector<std::wstring> * params);
+	std::vector<std::wstring> getCommandNames();
+	std::wstring getDescription();
+	std::wstring getShortDescription();
+	std::wstring getSyntax();
+};
+
 class SpawnCommandHandler : public ChatCommandHandler {
 	void handleCommand(SessionInfo *s, std::vector<std::wstring> * params);
 	std::vector<std::wstring> getCommandNames();

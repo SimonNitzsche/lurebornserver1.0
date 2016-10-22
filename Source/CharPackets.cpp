@@ -325,6 +325,7 @@ unsigned long FindCharPantsID(unsigned long pantsColor) {
 
 void GetCharSpecialItems(long long objectID, RakNet::BitStream *bitStream) {
 	std::vector<long long> items = EquipmentTable::getItems(objectID);
+	bitStream->Write((unsigned short)items.size());
 	for each(long long itm in items) {
 		long lot = ObjectsTable::getTemplateOfItem(itm);
 		if (lot == -1) lot = 0;

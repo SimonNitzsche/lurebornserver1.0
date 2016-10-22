@@ -3,8 +3,13 @@
 #include <mysql.h>
 
 #include "Database.h"
+#include "Logger.h"
+#include "Mission.h"
+#include "ReplicaDefinitions.h"
 
 #include <string>
+#include <sstream>
+#include <iostream>
 #include <vector>
 #include <unordered_map>
 
@@ -38,6 +43,7 @@ struct CharacterInfo{
 	unsigned int accountid = 0;
 	long long objid = 0;
 	unsigned short gmlevel = 0;
+	bool cloaked=0; //Look like a mythran
 	std::string name;
 	std::string unapprovedName;
 	bool nameRejected = false;
@@ -140,4 +146,13 @@ public:
 
 	std::string getName();
 	void mapTable(std::unordered_map<std::string, compare<ColData *> *> * data);
+};
+
+
+class StatsTable : public MySQLTable {
+public:
+	void mapTable(std::unordered_map<std::string, compare<ColData *> *> * data);
+	std::string getName();
+
+	static PLAYER_STATS getPlayerStats(long long charid, bool secondTry=false);
 };

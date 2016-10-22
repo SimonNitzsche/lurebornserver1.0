@@ -27,6 +27,7 @@ public:
 	static void registerObject(ReplicaObject * object);
 	static void unregisterObject(ReplicaObject * object);
 	static ReplicaObject * getObjectByID(long long objid);
+	static std::vector<ReplicaObject*> getObjectsOfWorld(unsigned short worldid);
 
 	//This initiates creation
 	static void create(long long objid);
