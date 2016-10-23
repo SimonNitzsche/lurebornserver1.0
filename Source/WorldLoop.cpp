@@ -304,6 +304,7 @@ void WorldLoop(CONNECT_INFO* cfg) {
 	ChatCommandManager::registerCommands(new FlagCommandHandler());
 	ChatCommandManager::registerCommands(new MacroCommandHandler());
 	ChatCommandManager::registerCommands(new KickCommandHandler());
+	ChatCommandManager::registerCommands(new CloakCommandHandler());
 	ChatCommandManager::registerCommands(new TestCommandHandler());
 
 	bool LUNI_WRLD = true;

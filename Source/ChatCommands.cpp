@@ -175,7 +175,12 @@ void ChatCommandManager::handleCommand(std::wstring message, SessionInfo *s){
 	else{
 		std::unordered_map<std::wstring, ChatCommandHandler *>::iterator it = ChatCommandManager::ChatCommands.find(command);
 		if (it != ChatCommandManager::ChatCommands.end()){
-			it->second->handleCommand(s, &params);
+			if (params.size() > 0 && ((params.at(0) == L"--help")||(params.at(0) == L"/?"))) {
+				Chat::sendChatMessage(s->addr, it->second->getDescription());
+			}
+			else {
+				it->second->handleCommand(s, &params);
+			}
 		}
 		else{
 			Chat::sendChatMessage(s->addr, L"Command " + command + L" does not exist!");
@@ -835,11 +840,14 @@ std::wstring AdminCommandHandler::getSyntax(){
 void KickCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params){
 	if (CharactersTable::getCharacterInfo(s->activeCharId).info.gmlevel > 0) {
 		if (params->size() > 0) {
-			SystemAddress addr = SessionsTable::findCharacter(CharactersTable::getObjidFromCharacter(std::string(params->at(0).begin(), params->at(0).end())));
+			long long charid = CharactersTable::getObjidFromCharacter(std::string(params->at(0).begin(), params->at(0).end()));
+			SystemAddress addr = SessionsTable::findCharacter(charid);
 			if (addr != UNASSIGNED_SYSTEM_ADDRESS) {
 				RakNet::BitStream *bs = WorldServer::initPacket(RemoteConnection::GENERAL, 0x01);
 				bs->Write((unsigned long)0x0b);
+				//bs->Write((int)0);
 				WorldServer::sendPacket(bs, addr);
+				ObjectsManager::clientLeaveWorld(charid, addr);
 				SessionsTable::logout(SessionsTable::getClientSession(addr).accountid);
 				for each (SessionInfo csi in SessionsTable::getClientsInInstance(Instances::currentInstance)) {
 					Chat::sendChatMessage(csi.addr, L"Player \"" + params->at(0) + L"\" got kicked by a moderator.");
@@ -868,6 +876,37 @@ std::wstring KickCommandHandler::getShortDescription() {
 }
 std::wstring KickCommandHandler::getSyntax() {
 	return L"<playername>";
+}
+
+void CloakCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {
+	if (CharactersTable::getCharacterInfo(s->activeCharId).info.gmlevel > 0) {
+		ListCharacterInfo playerInfo = CharactersTable::getCharacterInfo(s->activeCharId);
+		if (playerInfo.info.cloaked) {
+			playerInfo.info.cloaked = false;
+			CharactersTable::setCloaked(s->activeCharId,false);
+		}else {
+			playerInfo.info.cloaked = true;
+			CharactersTable::setCloaked(s->activeCharId,true);
+		}
+		ObjectsManager::serialize(s->activeCharId);
+		std::wstring m = (playerInfo.info.cloaked) ? (L"activated") : (L"deactivated");
+		Chat::sendChatMessage(s->addr, L"You're Mythran-Style has been " + m + L". Worldchange required.");
+	}
+	else {
+		Chat::sendChatMessage(s->addr, L"You're not allowed to use this command.");
+	}
+}
+std::vector<std::wstring> CloakCommandHandler::getCommandNames() {
+	return{ L"cloak", L"gmcloak" };
+}
+std::wstring CloakCommandHandler::getDescription() {
+	return L"Activates and Deactivates Mythranstyle on a minifigure";
+}
+std::wstring CloakCommandHandler::getShortDescription() {
+	return L"Mythran Style";
+}
+std::wstring CloakCommandHandler::getSyntax() {
+	return L"";
 }
 
 void SpawnCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring> * params) {

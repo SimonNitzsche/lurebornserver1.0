@@ -77,6 +77,7 @@ public:
 	static long long add(CharacterStyle style, unsigned int accountid, CharacterInfo names);
 	static bool unapprovedNameExists(std::string unapprovedname);
 	static void setGMlevel(long long objid, unsigned short newLevel);
+	static void setCloaked(long long charid, bool value);
 	static void setUScore(long long objid, unsigned int score);
 
 	std::string getName();

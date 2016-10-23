@@ -58,9 +58,10 @@ return CharactersTable::getCharacterInfo(qr);
 ListCharacterInfo CharactersTable::getCharacterInfo(long long objid){
 	std::stringstream qrs;
 	qrs << "SELECT ";
-	qrs << "`accountID`, `objectID`, `name`, `unapprovedName`, `nameRejected`, `freeToPlay`, `gmlevel`, ";
-	qrs << "`shirtColor`, `shirtStyle`, `pantsColor`, `hairStyle`, `hairColor`, `lh`, `rh`, `eyebrows`, `eyes`, `mouth`, ";
-	qrs << "`lastZoneId`, `mapInstance`, `mapClone`, `x`, `y`, `z`, `uScore`, `level`, `currency`, `reputation` ";
+	qrs << "`accountID`, `objectID`, `name`, `unapprovedName`, `nameRejected`, `freeToPlay`, `gmlevel`, "; //0-6
+	qrs << "`shirtColor`, `shirtStyle`, `pantsColor`, `hairStyle`, `hairColor`, `lh`, `rh`, `eyebrows`, `eyes`, `mouth`, "; //7-16
+	qrs << "`lastZoneId`, `mapInstance`, `mapClone`, `x`, `y`, `z`, `uScore`, `level`, `currency`, `reputation`, "; //17-26
+	qrs << "`invSizeTab0`, `invSizeTab1`, `invSizeTab2`, `invSizeTab3`, `cloaked` "; //27-31
 	qrs << "FROM `characters` WHERE `objectID` = '" << std::to_string(objid) << "';";
 	std::string qrss = qrs.str();
 	auto qr = Database::Query(qrss);
@@ -74,10 +75,10 @@ ListCharacterInfo CharactersTable::getCharacterInfo(long long objid){
 ListCharacterInfo CharactersTable::getCharacterInfo(std::string name){
 	std::stringstream qrs;
 	qrs << "SELECT ";
-	qrs << "`accountID`, `objectID`, `name`, `unapprovedName`, `nameRejected`, `freeToPlay`, `gmlevel`, ";
-	qrs << "`shirtColor`, `shirtStyle`, `pantsColor`, `hairStyle`, `hairColor`, `lh`, `rh`, `eyebrows`, `eyes`, `mouth`, ";
-	qrs << "`lastZoneId`, `mapInstance`, `mapClone`, `x`, `y`, `z`, `uScore`, `level`, `currency`, `reputation`, ";
-	qrs << "`invSizeTab0`, `invSizeTab1`, `invSizeTab2`, `invSizeTab3` ";
+	qrs << "`accountID`, `objectID`, `name`, `unapprovedName`, `nameRejected`, `freeToPlay`, `gmlevel`, "; //0-6
+	qrs << "`shirtColor`, `shirtStyle`, `pantsColor`, `hairStyle`, `hairColor`, `lh`, `rh`, `eyebrows`, `eyes`, `mouth`, "; //7-16
+	qrs << "`lastZoneId`, `mapInstance`, `mapClone`, `x`, `y`, `z`, `uScore`, `level`, `currency`, `reputation`, "; //17-26
+	qrs << "`invSizeTab0`, `invSizeTab1`, `invSizeTab2`, `invSizeTab3`, `cloaked` "; //27-31
 	qrs << "FROM `characters` WHERE `name` = '" << name << "';";
 	std::string qrss = qrs.str();
 	auto qr = Database::Query(qrss);
@@ -97,15 +98,15 @@ ListCharacterInfo CharactersTable::getCharacterInfo(MYSQL_RES *res){
 		i.info.objid = std::stoll(r[1]);
 		i.info.name = r[2];
 		i.info.unapprovedName = r[3];
-		if (std::stoi(r[4]) == 1) i.info.nameRejected = true;
-		if (std::stoi(r[5]) == 1) i.info.isFreeToPlay = true;
+		i.info.nameRejected = (std::stoi(r[4]) == 1);
+		i.info.isFreeToPlay = (std::stoi(r[5]) == 1);
 		i.info.gmlevel = std::stoi(r[6]);
 		i.info.uscore = std::stoi(r[23]);
 		i.info.level = std::stoi(r[24]);
+		i.info.cloaked = (std::stoi(r[30]) == 1);
 		i.info.currency = std::stoi(r[25]);
 		i.info.reputation = std::stoi(r[26]);
-		// TODO: For some reason this creates an error. Needs to be fixed
-		i.info.inventorySize = std::vector<int>{ 40,20,20,20 };//std::stoi(r[27]),std::stoi(r[28]),std::stoi(r[29]),std::stoi(r[30]) };
+		i.info.inventorySize = std::vector<int>{ std::stoi(r[27]),std::stoi(r[28]),std::stoi(r[29]),std::stoi(r[30]) };
 		//Style
 		i.style.shirtColor = std::stoul(r[7]);
 		i.style.shirtStyle = std::stoul(r[8]);
@@ -204,6 +205,12 @@ void CharactersTable::setGMlevel(long long objid, unsigned short newLevel){
 	Database::Query(str.str());
 }
 
+void CharactersTable::setCloaked(long long charid, bool value){
+	std::stringstream str;
+	str << "UPDATE `characters` SET `cloaked` = '" << (value?"1":"0") << "' WHERE `objectID` = '" << std::to_string(charid) << "'";
+	Database::Query(str.str());
+}
+
 void CharactersTable::setUScore(long long objid, unsigned int score){
 	std::stringstream str;
 	str << "UPDATE `characters` SET `uScore` = '" << std::to_string(score) << "' WHERE `objectID` = '" << std::to_string(objid) << "'";
@@ -245,6 +252,8 @@ void CharactersTable::mapTable(std::unordered_map<std::string, compare<ColData *
 }
 
 void CharactersTable::UpgradeTable() {
+	if (!Database::columnExists("characters", "cloaked"))
+		Database::Query("ALTER TABLE `characters` ADD `cloaked` INT(1) NOT NULL DEFAULT '0' AFTER `gmlevel`;");
 	if (!Database::columnExists("characters", "invSizeTab0"))
 		Database::Query("ALTER TABLE `characters` ADD `invSizeTab0` INT(5) NOT NULL DEFAULT '20';");
 	if (!Database::columnExists("characters", "invSizeTab1"))
