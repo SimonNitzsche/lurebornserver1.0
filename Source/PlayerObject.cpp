@@ -17,6 +17,7 @@
 PlayerObject::PlayerObject(long long objid, std::wstring name){
 	this->objid = objid;
 	
+	int rank = CharactersTable::getCharacterInfo(objid).info.cloaked;
 	
 	this->name = name.append(Characters::GetCharacterSubfix(objid));
 	
