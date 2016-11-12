@@ -93,6 +93,9 @@ private:
 	//static std::unordered_map<SystemAddress, SessionInfo, SystemAddressHasher> sessions;
 	static std::vector<SessionInfo> onlineSessions;
 public:
+	//Updating
+	static bool UpdateSession(SessionInfo updatedSession);
+
 	//Connection
 	static SessionInfo connect(SystemAddress address);
 	static bool disconnect(SystemAddress address);
@@ -111,11 +114,14 @@ public:
 
 	static SystemAddress findCharacter(long long charid);
 	static std::vector<SessionInfo> getClientsInWorld(unsigned short zoneid);
+	static std::vector<SessionInfo> getClientsInWorld(World world);
+	static std::vector<SessionInfo> getClientsInClone(unsigned short cloneid);
 	static std::vector<SessionInfo> getClientsInInstance(int instanceid);
 	static void setInstanceId(unsigned int accountid, int instanceid);
 
 	//Worlds
-	static SessionInfo enter(long long charid, unsigned short zoneId);
+	static SessionInfo enter(long long charid, World world);
+	static SessionInfo enter(long long charid, unsigned short zoneId, unsigned short cloneId=NULL);
 	static SessionInfo leave(long long charid);
 
 	//Database

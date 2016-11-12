@@ -58,6 +58,17 @@ unsigned long CDClientDB::getSkillID(unsigned long LOT, unsigned long castOnType
 		return -1;
 }
 
+bool CDClientDB::isTwoHanded(unsigned long LOT) {
+	std::stringstream ss;
+	ss << "SELECT isTwoHanded FROM ItemComponent WHERE id = '" << LOT << "';";
+	sqdb::Statement stm = SQLiteDatabase::Query("cdclient.sqlite", ss.str());
+
+	if (stm.Next())
+		return (stm.GetField(0).GetInt()==1);
+	else
+		return false;
+}
+
 bool CDClientDB::isAnimationValid(std::string animationID) {
 	std::stringstream ss;
 	ss << "SELECT animationGroupID FROM Animations WHERE animation_type = '" << animationID << "';";

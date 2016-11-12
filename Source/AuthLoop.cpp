@@ -50,7 +50,7 @@ void HandleUserLogin(RakPeerInterface* rakServer, Packet* packet, CONNECT_INFO* 
 		Logger::log("AUTH", "LOGIN", "Password: " + pwcs, LOG_DEBUG);
 		unsigned short language_id;
 		data->Read(language_id);
-		Logger::log("AUTH", "LOGIN", "Language: " + std::to_string(language_id), LOG_ALL);
+		Logger::log("AUTH", "LOGIN", "Language: " + std::to_string(language_id));
 		unsigned char uk1;
 		data->Read(uk1);
 		Logger::log("AUTH", "LOGIN", "Unknown?: " + std::to_string(uk1), LOG_ALL);

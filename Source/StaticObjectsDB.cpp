@@ -6,6 +6,7 @@
 #include "GenericObject.h"
 #include "NPCObject.h"
 #include "EnvironmentalObject.h"
+#include "EnemyObject.h"
 
 #include <stdlib.h>
 #include <cstring>
@@ -99,7 +100,7 @@ void StaticObjectsDB::spawnSmashables() {
 
 		ObjectsManager::registerObject(smashable);
 		//ObjectsManager::registerSmashable(smashable);
-		ObjectsManager::create(smashable);
+		//ObjectsManager::create(smashable);
 		double nProg = getPercOf(it, ct);
 		//if (nProg > lProg) {
 		cout << getPercString(fs, nProg);
@@ -140,7 +141,7 @@ void StaticObjectsDB::spawnCarBuilders() {
 		c3->setRotation(COMPONENT3_ROTATION(rX, rY, rZ, rW));
 
 		ObjectsManager::registerObject(carbuilder);
-		ObjectsManager::create(carbuilder);
+		//ObjectsManager::create(carbuilder);
 		int nProg = getPercOf(it, ct);
 		if (nProg > lProg) {
 			cout << getPercString(fs, nProg);
@@ -181,7 +182,7 @@ void StaticObjectsDB::spawnRocketBuilders() {
 		c3->setRotation(COMPONENT3_ROTATION(rX, rY, rZ, rW));
 
 		ObjectsManager::registerObject(rocketbuilder);
-		ObjectsManager::create(rocketbuilder);
+		//ObjectsManager::create(rocketbuilder);
 		int nProg = getPercOf(it, ct);
 		if (nProg > lProg) {
 			cout << getPercString(fs, nProg);
@@ -216,13 +217,22 @@ void StaticObjectsDB::spawnNPCs() {
 		double rW = stm.GetField(8).GetDouble();
 
 		NPCObject * npc = new NPCObject(objectLOT, zone);
-		SimplePhysicsComponent *c3 = npc->getSimplePhysicsComponent();
+		
+		if (npc->componentAttached(CONTROLABLE_PHYSICS_COMPONENT)) {
+			ControllablePhysicsComponent *c1 = (ControllablePhysicsComponent*)npc->getComponent(CONTROLABLE_PHYSICS_COMPONENT);
+			c1->setPosition(COMPONENT1_POSITION(x, y, z));
+			c1->setRotation(COMPONENT1_ROTATION(rX, rY, rZ, rW));
+		}
+		
+		if (npc->componentAttached(SIMPLE_PHYSICS_COMPONENT)) {
+			SimplePhysicsComponent *c3 = npc->getSimplePhysicsComponent();
 
-		c3->setPosition(COMPONENT3_POSITION(x, y, z));
-		c3->setRotation(COMPONENT3_ROTATION(rX, rY, rZ, rW));
+			c3->setPosition(COMPONENT3_POSITION(x, y, z));
+			c3->setRotation(COMPONENT3_ROTATION(rX, rY, rZ, rW));
+		}
 
 		ObjectsManager::registerObject(npc);
-		ObjectsManager::create(npc);
+		//ObjectsManager::create(npc);
 		int nProg = getPercOf(it, ct);
 		if (nProg > lProg) {
 			cout << getPercString(fs, nProg);
@@ -299,7 +309,7 @@ void StaticObjectsDB::spawnChoicebuilds() {
 	//quickbuild->target = qb->getObjectID();
 
 	ObjectsManager::registerObject(quickbuild);
-	ObjectsManager::create(quickbuild);
+	//ObjectsManager::create(quickbuild);
 	cout << getPercString(fs, 100) << "\n";
 	initDone = true;
 }
@@ -330,7 +340,7 @@ void StaticObjectsDB::spawnWorldObjects() {
 		GenericObject * worldobject = new GenericObject(objectLOT, zone, COMPONENT1_POSITION(x, y, z), COMPONENT1_ROTATION(rX, rY, rZ, rW), COMPONENT1_VELOCITY(), COMPONENT1_VELOCITY_ANGULAR());
 
 		ObjectsManager::registerObject(worldobject);
-		ObjectsManager::create(worldobject);
+		//ObjectsManager::create(worldobject);
 		int nProg = getPercOf(it, ct);
 		if (nProg > lProg) {
 			cout << getPercString(fs, nProg);
@@ -367,7 +377,7 @@ void StaticObjectsDB::spawnAmbientSound() {
 		GenericObject * ambientsound = new GenericObject(objectLOT, zone, COMPONENT1_POSITION(x, y, z), COMPONENT1_ROTATION(rX, rY, rZ, rW), COMPONENT1_VELOCITY(), COMPONENT1_VELOCITY_ANGULAR());
 
 		ObjectsManager::registerObject(ambientsound);
-		ObjectsManager::create(ambientsound);
+		//ObjectsManager::create(ambientsound);
 		int nProg = getPercOf(it, ct);
 		if (nProg > lProg) {
 			cout << getPercString(fs, nProg);
@@ -406,7 +416,7 @@ void StaticObjectsDB::spawnMissionObjects() { //GenericObjects-Table
 		GenericObject * misobj = new GenericObject(objectLOT, zone, COMPONENT1_POSITION(x, y, z), COMPONENT1_ROTATION(rX, rY, rZ, rW), COMPONENT1_VELOCITY(), COMPONENT1_VELOCITY_ANGULAR());
 
 		ObjectsManager::registerObject(misobj);
-		ObjectsManager::create(misobj);
+		//ObjectsManager::create(misobj);
 		int nProg = getPercOf(it, ct);
 		if (nProg > lProg) {
 			cout << getPercString(fs, nProg);
@@ -463,35 +473,31 @@ void StaticObjectsDB::loadAll() {
 	int ct = 0;
 	int it = 0;
 	st << "SELECT * FROM npcs"; //deprecated!
-	int state = mysql_query(Database::getConnection(), st.str().c_str());
-	if (state == 0) {
-		//okay
-		MYSQL_RES *result = mysql_store_result(Database::getConnection());
-		MYSQL_ROW row;
-		ct=mysql_num_rows(result);
-		while ((row = mysql_fetch_row(result)) != NULL) {
-			it++;
-			NPCObject * npc = new NPCObject(stol(row[1]), stol(row[2]));
+	//okay
+	MYSQL_RES *result = Database::Query(st.str());
+	MYSQL_ROW row;
+	ct=mysql_num_rows(result);
+	while ((row = mysql_fetch_row(result)) != NULL) {
+		it++;
+		NPCObject * npc = new NPCObject(stol(row[1]), stol(row[2]));
+		SimplePhysicsComponent *c3 = npc->getSimplePhysicsComponent();
 
-			SimplePhysicsComponent *c3 = npc->getSimplePhysicsComponent();
+		COMPONENT3_POSITION pos = COMPONENT3_POSITION(stof(row[3]), stof(row[4]), stof(row[5]));
+		COMPONENT3_ROTATION rot = COMPONENT3_ROTATION(stof(row[6]), stof(row[7]), stof(row[8]), stof(row[9]));
 
-			COMPONENT3_POSITION pos = COMPONENT3_POSITION(stof(row[3]), stof(row[4]), stof(row[5]));
-			COMPONENT3_ROTATION rot = COMPONENT3_ROTATION(stof(row[6]), stof(row[7]), stof(row[8]), stof(row[9]));
+		c3->setPosition(pos);
+		c3->setRotation(rot);
 
-			c3->setPosition(pos);
-			c3->setRotation(rot);
+		ObjectsManager::registerObject(npc);
+		//ObjectsManager::create(npc);
 
-			ObjectsManager::registerObject(npc);
-			ObjectsManager::create(npc);
-
-			int nProg = getPercOf(it, ct);
-			if (nProg > lProg) {
-				cout << getPercString(fs, nProg);
-				lProg = nProg;
-			}
+		int nProg = getPercOf(it, ct);
+		if (nProg > lProg) {
+			cout << getPercString(fs, nProg);
+			lProg = nProg;
 		}
-		cout << getPercString(fs, 100) << "\n";
 	}
+	cout << getPercString(fs, 100) << "\n";
 	initDone = true;
 	
 	StaticObjectsDB::spawnNPCs();

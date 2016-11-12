@@ -151,13 +151,7 @@ bool CharactersTable::setCharactersPlace(long long objid, WorldPlace place){
 	}
 	return true;*/
 
-	int state = mysql_query(Database::getConnection(), qrs.c_str());
-	if (state != 0){
-		std::stringstream wss;
-		wss << "Character position was NOT saved. MYSQL Error. " << mysql_error(Database::getConnection());
-		Logger::log("MYSQL", "ERR", wss.str());
-		return false;
-	}
+	Database::Query(qrs);
 	return true;
 }
 
@@ -188,7 +182,7 @@ long long CharactersTable::add(CharacterStyle style, unsigned int accountid, Cha
 	query2 << std::to_string(style.lh) << "', '" << std::to_string(style.rh) << "', '" << std::to_string(style.eyebrows) << "', '";
 	query2 << std::to_string(style.eyes) << "', '" << std::to_string(style.mouth) << "', '1000'); ";
 	Database::Query(query2.str());
-	return mysql_insert_id(Database::getConnection());
+	return std::stoll(mysql_fetch_row(Database::Query("SELECT `objectID` from `characters` WHERE `name`="+names.name))[0]);
 }
 
 bool CharactersTable::unapprovedNameExists(std::string unapprovedname){

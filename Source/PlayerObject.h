@@ -13,6 +13,8 @@ class PlayerObject : public ReplicaObject{
 public:
 	PlayerObject(long long objid, std::wstring name);
 
+	void setRocket(std::wstring ldfString);
+
 	// -- Components --
 	ControllablePhysicsComponent *getComponent1();
 	DestructibleComponent *getComponent7();

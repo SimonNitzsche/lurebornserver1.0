@@ -25,6 +25,7 @@
 #include "Worlds.h"
 #include "GameMessages.h"
 #include "WebAPIService.h"
+#include "WebSocketService.h"
 #include "Interact.h"
 
 // - Network -
@@ -32,7 +33,8 @@
 #include "legoPackets.h"
 #include "Packet.h"
 #include "WorldServer.h"
-#include "Macro.h";
+#include "Macro.h"
+#include "easywsclient.hpp"
 
 // -- Connections --
 #include "WorldConnection.h"
@@ -326,15 +328,16 @@ void WorldLoop(CONNECT_INFO* cfg) {
 	ObjectsManager::registerObject(new GenericObject(4768, 1000, COMPONENT1_POSITION(-267.8657531738281, 608.3709716796875,24.153282165527344)));
 	StaticObjectsDB::initDone = true;
 
+	// some service thread
+	std::thread wsThrd(WebSocketService::WSService);
+	wsThrd.detach();
+
 	// This will be used in the saving of packets below...
-	time_t nextWAPIrun = time(0);
 	LiveUpdateTable::createIfNotExists();
+	std::thread LIT_THRD(LiveUpdateTable::instance);
+	LIT_THRD.detach();
 	while (LUNI_WRLD) {
 		WorldLoopThread(buffer, LUNI_WRLD, buffer_started, i);
-		if (time(0)>nextWAPIrun) {
-			WebAPIService::class_thread();
-			nextWAPIrun = time(0) + 10; //Time until next LiveUpdateCheck
-		}
 	}
 
 	int instanceid = InstancesTable::getInstanceId(ServerAddress);
@@ -804,6 +807,10 @@ void parsePacket(RakPeerInterface* rakServer, SystemAddress &systemAddress, RakN
 				//Temporarily ?
 				player->gmlevel = (unsigned char)cinfo.info.gmlevel;
 				player->world.zone = zid;
+				player->world.instance = Instances::currentInstance;
+				player->world.clone = zid; //If on property -> change to propertyID -> 3000 + properyId
+
+				// TODO: Add Clone-Switch while adding properties
 
 				ControllablePhysicsComponent * c1 = player->getComponent1();
 				c1->setPosition(pos);

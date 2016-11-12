@@ -7,6 +7,7 @@
 #include "LootObject.h"
 #include "PlayerObject.h"
 #include "AccountsDB.h"
+#include "StaticObjectsDB.h"
 
 #include "ObjectID.h"
 
@@ -24,7 +25,8 @@
 using namespace std;
 
 EnemyObject::EnemyObject(unsigned long lot, unsigned long currentZone) {
-	Logger::log("REPL", "ENEMY", "Initializing Enemy");
+	if(StaticObjectsDB::initDone)
+		Logger::log("REPL", "ENEMY", "Initializing Enemy");
 
 	this->zoneID = currentZone;
 	initializeEnemy(lot);
@@ -112,7 +114,8 @@ void EnemyObject::initializeEnemy(unsigned long lot) {
 		sqdb::Statement state1_1 = SQLiteDatabase::Query("cdclient.sqlite", itemsQuery.str().c_str());
 
 		if (state1_1.Next()) {
-			cout << "Object with LOT " << lot << " has item " << state1_1.GetField(0).GetText() << endl;
+			if(StaticObjectsDB::initDone)
+				cout << "Object with LOT " << lot << " has item " << state1_1.GetField(0).GetText() << endl;
 
 			std::stringstream stringstream(state1_1.GetField(0).GetText());
 			std::string token;

@@ -7,6 +7,7 @@ public:
 	//static std::string getEquipLocation(unsigned long componentID);
 	static unsigned long getItemType(unsigned long componentID);
 	static unsigned long getSkillID(unsigned long LOT, unsigned long castOnType);
+	static bool isTwoHanded(unsigned long LOT);
 	static bool isAnimationValid(std::string animationID);
 	static std::wstring getAnimationOfEmote(unsigned short emoteID);
 	static std::vector<unsigned long> CDClientDB::getInventoryComponentData(unsigned long LOT);

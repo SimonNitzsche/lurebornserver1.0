@@ -53,7 +53,10 @@ ZoneAddress ClientWorldPackets::HandleLevelLoadComplete(RakNet::BitStream * data
 	return za;
 }
 
+std::stringstream endstring;
+
 void writeRaw(RakNet::BitStream *data, std::string str){
+	endstring << str;
 	for (unsigned long i = 0; i < str.size(); i++){
 		data->Write(str.at(i));
 	}
@@ -105,6 +108,7 @@ void WorldServerPackets::CreateCharacter(SystemAddress address, long long charob
 	writeRaw(xml, "<b t=\"14\" m=\"" + std::to_string(cinfo.info.inventorySize.at(2)) + "\"/>");
 	writeRaw(xml, "<b t=\"15\" m=\"" + std::to_string(cinfo.info.inventorySize.at(3)) + "\"/>");
 	writeRaw(xml, "</bag>");
+	writeRaw(xml, "<grps/>");
 	writeRaw(xml, "<items>");
 	//Adding items to the inventory:
 	//l: LOT, template, type of item
@@ -140,12 +144,13 @@ void WorldServerPackets::CreateCharacter(SystemAddress address, long long charob
 					adddata << " b=\"1\"";
 				}
 				if (oinfo.spawnerid > -1) {
-					adddata << ">";
+					
 
 					ObjectInfo sinfo = ObjectsTable::getItemInfo(oinfo.spawnerid); //gnerates spawnerId from spawnerId <-- This should be objid but objid would result in a mess of bugs.
 					if (sinfo.spawnerid == -1) {
 						//Not an item for an object itself
 						if (sinfo.lot == 6416) {
+							adddata << ">";
 							//This is a custom Rocket
 							RocketInfo rinfo = ObjectsTable::getRocketInfo(sinfo.objid);
 							if (rinfo.cockpit_template > 0 && rinfo.engine_template > 0 && rinfo.nose_cone_template > 0) {
@@ -153,10 +158,15 @@ void WorldServerPackets::CreateCharacter(SystemAddress address, long long charob
 								//adddata << "<x ma=\"0:1:" << rinfo.nose_cone_template << "+1:" << rinfo.cockpit_template << "+1:" << rinfo.engine_template << "\"/>";
 								Logger::log("USER", "CHARDATA", "Adding Rocket");
 							}
+							adddata << "</i>";
+						}
+						else {
+							adddata << "/>";
 						}
 					}
-
-					adddata << "</i>";
+					else {
+						adddata << "/>";
+					}
 				}
 				else {
 					adddata << "/>";
@@ -170,14 +180,18 @@ void WorldServerPackets::CreateCharacter(SystemAddress address, long long charob
 	writeRaw(xml, "</inv>");
 	writeRaw(xml, "<mf/>");
 	writeRaw(xml, "<char cc=\"");
-	writeRaw(xml, std::to_string(cinfo.info.currency).c_str());
-	writeRaw(xml, "\"></char>");
+	writeRaw(xml, std::to_string(cinfo.info.currency)+"\"");
+	writeRaw(xml, " gm=\""+std::to_string(cinfo.info.cloaked?1:0)+"\"");
+	writeRaw(xml, ">");
+	writeRaw(xml, "</char>");
 	std::stringstream adddata;
 	adddata << "<lvl";
 	adddata << " l=\""+std::to_string(cinfo.info.level)+"\"";
 	adddata << "/>";
+	adddata << "<flag>";
+	adddata << "<f id=\"2\" v=\"1\"/>";
 	writeRaw(xml, adddata.str());
-	writeRaw(xml, "<flag/>");
+	writeRaw(xml, "</flag>");
 	writeRaw(xml, "<pet/>");
 	std::vector<MISSION_DATA> missions = MissionsTable::getMissions(charobjid);
 	if (missions.size() > 0){
@@ -213,8 +227,13 @@ void WorldServerPackets::CreateCharacter(SystemAddress address, long long charob
 		writeRaw(xml, "<mis/>");
 	}
 	writeRaw(xml, "<mnt/>");
-	writeRaw(xml, "<dest/>");
+	writeRaw(xml, "<dest hm=\"9\" hc=\"9\" im=\"23\" ic=\"33\" am=\"0\" ac=\"14\" rsh=\"4\" rsi=\"6\" d=\"0\" imm=\"0\"/>");
 	writeRaw(xml, "</obj>");
+
+	/*std::ofstream mf;
+	mf.open("cl.xml");
+	mf << endstring.str();
+	mf.close();*/
 
 	ldf->writeBYTES(L"xmlData", xml);
 

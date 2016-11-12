@@ -6,13 +6,14 @@
 #include "Account.h"
 #include "Logger.h"
 #include "PlayerObject.h"
+#include "InventoryDB.h"
 
 #include <algorithm>
 #include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
+#include <thread>
 
 bool Worlds::loadWorld(SystemAddress address, ZoneId zone, COMPONENT1_POSITION pos, unsigned short instance, unsigned long clone){
 	RakNet::BitStream * stream = WorldServer::initPacket(RemoteConnection::CLIENT, ClientPacketID::MSG_CLIENT_LOAD_STATIC_ZONE);
@@ -102,14 +103,15 @@ void ObjectsManager::create(long long objid){
 	}
 }
 
-void ObjectsManager::create(ReplicaObject * object){
-	//When creating a new object, we need to:
-	//send the creation to every connected session in that zone
-	
+void tcreatev(ReplicaObject * object) {
 	std::vector<SessionInfo> sess = SessionsTable::getClientsInWorld(object->world.zone);
-	for (std::vector<SessionInfo>::iterator it = sess.begin(); it != sess.end(); ++it){
+	for (std::vector<SessionInfo>::iterator it = sess.begin(); it != sess.end(); ++it) {
 		WorldServer::getRM()->Construct(object, false, it->addr, false);
 	}
+}
+
+void ObjectsManager::create(ReplicaObject * object){
+	std::thread(tcreatev, object).detach();
 }
 
 void ObjectsManager::serialize(long long objid){
@@ -147,10 +149,16 @@ void ObjectsManager::destruct(ReplicaObject * object){
 //This manages player
 void ObjectsManager::clientLeaveWorld(long long objid, SystemAddress addr){
 	/*	When a client leaves a world
-		1) destruct him for everyone
-		2) destruct every object for him
+		1) destruct equipment for everyone
+		2) destruct him for everyone
+		3) destruct every object for him
 	*/
 	ReplicaObject * object = ObjectsManager::getObjectByID(objid);
+	std::vector<long long> eil =  EquipmentTable::getItems(objid);
+	for each(long long o in eil) {
+		ObjectsManager::destruct(o);
+	}
+	//ObjectsManager::destruct
 	if (object != NULL){
 		ObjectsManager::destruct(object);
 		ObjectsManager::unregisterObject(object);

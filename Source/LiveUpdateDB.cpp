@@ -2,7 +2,11 @@
 #include "Logger.h"
 #include <sstream>
 #include <stdlib.h>
-
+#include "WebAPIService.h"
+#include "Database.h"
+#include <thread>
+#include <chrono>
+#include <iostream>
 
 void LiveUpdateTable::createIfNotExists() {
 	std::stringstream qrss;
@@ -20,19 +24,28 @@ std::vector<std::vector<std::string>> LiveUpdateTable::getCommands() {
 	auto qr = Database::Query(qrs);
 	std::vector<std::vector<std::string>> commandList = { { "" } };
 	commandList.clear();
-	if (mysql_num_rows(qr) > 0) {
-		Logger::log("LUDB", "GCMD", "Updating "+std::to_string(mysql_num_rows(qr))+" items...");
-		MYSQL_ROW row;
-		while ((row = mysql_fetch_row(qr)) != NULL) {
-			std::vector<std::string> cmdV = {""};
-			cmdV.clear();
-			for (int i = 0; i < mysql_num_fields(qr); i++)
-				if (row[i] != NULL&&row[i] != "")
-					cmdV.insert(std::end(cmdV), row[i]);
-			commandList.insert(std::end(commandList), cmdV);
+	if (qr != NULL) {
+		if (mysql_num_rows(qr) > 0) {
+			Logger::log("LUDB", "GCMD", "Updating " + std::to_string(mysql_num_rows(qr)) + " items...");
+			MYSQL_ROW row;
+			while ((row = mysql_fetch_row(qr)) != NULL) {
+				std::vector<std::string> cmdV = { "" };
+				cmdV.clear();
+				for (unsigned int i = 0; i < mysql_num_fields(qr); i++)
+					if (row[i] != NULL&&row[i] != "")
+						cmdV.insert(std::end(cmdV), row[i]);
+				commandList.insert(std::end(commandList), cmdV);
+			}
 		}
 	}
 	return commandList;
+}
+
+void LiveUpdateTable::instance() {
+	while(true){
+		WebAPIService::class_thread();
+		Sleep(10000);
+	}
 }
 
 void LiveUpdateTable::applyCommand(std::string dbID) {

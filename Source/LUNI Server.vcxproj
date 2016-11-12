@@ -103,6 +103,7 @@
   <ItemGroup>
     <ClInclude Include="CDClientDB.h" />
     <ClInclude Include="DroppedLootObject.h" />
+    <ClInclude Include="easywsclient.hpp" />
     <ClInclude Include="EnemyObject.h" />
     <ClInclude Include="EnvironmentalObject.h" />
     <ClInclude Include="GenericObject.h" />
@@ -134,6 +135,7 @@
     <ClInclude Include="IniReader.h" />
     <ClInclude Include="InventoryDB.h" />
     <ClInclude Include="LDF.h" />
+    <ClCompile Include="easywsclient.cpp" />
     <ClCompile Include="ImaginationOrb.cpp" />
     <ClCompile Include="Interact.cpp" />
     <ClCompile Include="LiveUpdateDB.h" />
@@ -158,6 +160,7 @@
     <ClInclude Include="Vector3.h" />
     <ClInclude Include="Vector4.h" />
     <ClInclude Include="WebAPIService.h" />
+    <ClInclude Include="WebSocketService.h" />
     <ClInclude Include="World.h" />
     <ClInclude Include="WorldConnection.h" />
     <ClInclude Include="Worlds.h" />
@@ -209,6 +212,7 @@
     <ClCompile Include="TimedEvent.cpp" />
     <ClCompile Include="UtfConverter.cpp" />
     <ClCompile Include="WebAPIService.cpp" />
+    <ClCompile Include="WebSocketService.cpp" />
     <ClCompile Include="World.cpp" />
     <ClCompile Include="WorldConnection.cpp" />
     <ClCompile Include="WorldLoop.cpp" />

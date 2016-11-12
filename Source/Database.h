@@ -47,11 +47,13 @@ class Database {
 private:
 	static MYSQL * _con; // This is the MySQL Connection
 	static std::vector<MySQLTable *> tables;
+	static std::vector<std::string> mLD;
 	Database() {} // Private Database initializer
 public:
 	// Initialize connection.
 	// This takes the host, the database, the DB username, and the DB password as strings and connects the server to
 	// the MySQL database
+	static unsigned int Connect(std::vector<std::string>ld);
 	static unsigned int Connect(const std::string& host, const std::string& database, const std::string& username, const std::string& password);
 
 	// Query the MySQL database and return results
@@ -62,4 +64,5 @@ public:
 	static void registerTable(MySQLTable * tbl);
 	static void addColToMap(std::unordered_map<std::string, compare<ColData *> *> * data, std::string colName, ColData * colData);
 	static bool columnExists(std::string table, std::string column);
+	static bool isBusy;
 };

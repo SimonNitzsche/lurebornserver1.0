@@ -596,8 +596,6 @@ void GameMSG::resurrect(long long charid, bool immediate)
 		for (unsigned int k = 0; k < sessionsz.size(); k++) {
 			WorldServer::sendPacket(bs, sessionsz.at(k).addr);
 		}
-		
-		SetStunned(s.accountid, "POP");
 	}
 }
 
@@ -803,7 +801,7 @@ unsigned long uiSkillHandle)
 	bs->Write(originatorRot.z);
 	bs->Write(originatorRot.w);
 	bs->Write(sBitStream);
-	bs->Write(skillID);
+	bs->Write(std::to_string(skillID));
 	bs->Write(uiSkillHandle);
 
 	std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
@@ -936,8 +934,17 @@ void GameMSG::OfferMission(int misID, SystemAddress systemAddress, long long npc
 	WorldServer::sendPacket(ef, systemAddress);
 }
 
+void GameMSG::NotifyMission(int misID, int misState, bool rewards, SystemAddress systemAddress) {
+	long long charid = SessionsTable::getClientSession(systemAddress).activeCharId;
+	RakNet::BitStream * ef = WorldServerPackets::InitGameMessage(charid, NOTIFY_MISSION);
+	ef->Write((int)misID);
+	ef->Write((int)misState);
+	ef->Write((bool)rewards);
+
+	WorldServer::sendPacket(ef, systemAddress);
+}
+
 bool handleObjectInteraction(ObjectInformation obj, SystemAddress &systemAddress) {
-	Logger::log("", "", "LALALA MANAGING INTERACT (A)");
 	if (obj.type != ObjectType::NONE) {
 		switch (obj.type)
 		{
@@ -1049,7 +1056,6 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 			data->Read(rotW);
 			std::string sBitStream;
 			data->Read(sBitStream);
-			sBitStream = "6A0200";
 			long skillID;
 			data->Read(skillID);
 			unsigned int uiSkillHandle;
@@ -1097,6 +1103,8 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 			Logger::log("WRLD", "COMBAT", bitstream);
 			//response
 			EchoSyncSkill(systemAddress, bitstream, num1, num2, flag);
+
+
 
 			/*RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(SessionsTable::getClientSession(systemAddress).activeCharId, 0x0020);
 			bs->Write(false);
@@ -1728,18 +1736,28 @@ void GameMSG::parseGameMSG(unsigned short messageID, RakNet::BitStream *data, Sy
 			for (int i = 0; i < oow.size(); i++) {
 				GenericObject *go = (GenericObject*)oow.at(i);
 				if (go != NULL) {
-					if (go->inRange(po, 5)&&geo==NULL) {
+					if (go->inRange(po, 15)&&geo==NULL) {
 						geo = go;
 						break;
 					}
 				}
 			}
 			if (geo != NULL) {
-				Chat::sendChatMessage(s, s.activeCharId, L"Picked up Collectible " + std::to_wstring(geo->objid));
+				Chat::sendChatMessage(s.activeCharId, L"Picked up Collectible " + std::to_wstring(geo->objid));
+				GameMSG::NotifyMission(173,4,false, s.addr);
 			}
 			else {
-				Chat::sendChatMessage(s, s.activeCharId, L"No collectible found!");
+				Chat::sendChatMessage(s.activeCharId, L"No collectible in range found!");
 			}
+		} break;
+		case SETFLAG: {
+			bool value;
+			int flagID;
+			data->Read(value);
+			data->Read(flagID);
+			std::wstringstream wss;
+			wss << L"Set Flag #" << std::to_wstring(flagID) << L": " << (value ? L"on" : L"off");
+			Chat::sendChatMessage(s.activeCharId, wss.str());
 		} break;
 		default:
 		{

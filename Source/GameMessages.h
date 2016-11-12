@@ -87,7 +87,7 @@ enum GameMessage : long {
 	UPDATE_SHOOTING_GALLER_ROTATION = 0x01c0,
 	SET_USER_CTRL_COMP_PAUSE = 0x01d2,
 	SET_TOOLTIP_FLAG = 0x01d5,
-	//SET_FLAG = 0x01d7,
+	SETFLAG = 0x01d7,
 	NOTIFY_CLIENT_FLAG_CHANGE = 0x01d8,
 	HELP = 0x01db,
 	VENDOR_TRANSACTION_RESULT = 0x01dc,
@@ -363,6 +363,7 @@ public:
 	static void unequipItem(long long charid, long long objid);
 
 	static void OfferMission(int misID, SystemAddress systemAddress, long long npc);
+	static void NotifyMission(int misID, int misState, bool rewards, SystemAddress systemAddress);
 
 	//parses the game messages
 	static void parseGameMSG(unsigned short messageID, RakNet::BitStream *data, SystemAddress &systemAddress);

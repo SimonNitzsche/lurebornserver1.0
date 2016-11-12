@@ -8,7 +8,10 @@
 using namespace std;
 
 MYSQL * Database::_con = NULL; // Set MYSQL connection variable to NULL
+bool Database::isBusy = false;
 std::vector<MySQLTable *> Database::tables;
+
+std::vector<std::string> Database::mLD = {};
 
 ColData::ColData(std::string t, bool n, std::string k, std::string d, std::string e){
 	this->type = t;
@@ -27,10 +30,22 @@ ColData::ColData(){
 }
 
 // Connect to the MySQL database. Requires the host, database, DB user, and DB password to connect
+
+unsigned int Database::Connect(std::vector<std::string>ld) {
+	return Database::Connect(ld.at(0), ld.at(1), ld.at(2), ld.at(3));
+}
+
 unsigned int Database::Connect(const string& host, const string& database, const string& username, const string& password) {
+	if (!(mLD.size()>0)) {
+		mLD.clear();
+		mLD.push_back(host);
+		mLD.push_back(database);
+		mLD.push_back(username);
+		mLD.push_back(password);
+	}
 	_con = mysql_init(NULL); //init sql connection
 	if (_con == NULL) return 1;
-	//if (!_con) throw MySqlException("Can't start mysql service!\n");
+	if (!_con) throw MySqlException("Can't start mysql service!\n");
 
 	MYSQL * _cont = mysql_real_connect(_con, host.c_str(), username.c_str(), password.c_str(), database.c_str(), 0, NULL, 0); //connection to luni database
 	if (_cont == NULL){
@@ -139,6 +154,7 @@ unsigned int Database::Connect(const string& host, const string& database, const
 
 			break;
 		}
+
 		return state;
 	}
 	_con = _cont;
@@ -150,9 +166,21 @@ unsigned int Database::Connect(const string& host, const string& database, const
 
 // Query the MySQL database for a specific string
 MYSQL_RES * Database::Query(const string & query) {
-	if (_con == NULL) throw MySqlException("Database connection error!\n");
+	while (Database::isBusy) {
+		Sleep(1);
+	}
+	Database::isBusy = true;
+	if (_con != NULL) {
+		mysql_close(_con);
+		_con=NULL;
+	}
+	Database::Connect(mLD);
 	mysql_query(_con, (char*)query.c_str());
-	return mysql_store_result(_con);
+	MYSQL_RES * result = mysql_store_result(_con);
+	mysql_close(_con);
+	_con = NULL;
+	Database::isBusy = false;
+	return result;
 }
 
 MYSQL * Database::getConnection(){

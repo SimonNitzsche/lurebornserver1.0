@@ -10,7 +10,7 @@
 #include "Social.h"
 #include "Worlds.h"
 
-void parseUpdate(std::vector<std::string> cmdV) {
+void WebAPIService::parseUpdate(std::vector<std::string> cmdV) {
 	LiveUpdateTable::applyCommand(cmdV.at(0)); //id;cmd;param1;param2;param3
 	std::string command = cmdV.at(1);
 	std::string param1 = cmdV.at(2);
@@ -50,7 +50,7 @@ void parseUpdate(std::vector<std::string> cmdV) {
 	}
 }
 
-void startup() {
+void WebAPIService::startup() {
 	LiveUpdateTable::createIfNotExists();
 }
 
@@ -60,5 +60,5 @@ void WebAPIService::class_thread() {
 	auto cmdL = LiveUpdateTable::getCommands();
 	if (cmdL.size() > 0)
 		for (int i = 0; i < cmdL.size(); i++)
-			parseUpdate(cmdL.at(i));
+			WebAPIService::parseUpdate(cmdL.at(i));
 }

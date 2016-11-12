@@ -31,7 +31,14 @@ PlayerObject::PlayerObject(long long objid, std::wstring name){
 	this->addComponent(new SkillComponent());
 	this->addComponent(new RenderComponent());
 	this->addComponent(new Index36Component());
+
+	setRocket(L"1:14695;1:14696;1:14697;");
+
 	ObjectsManager::registerObject(this);
+}
+
+void PlayerObject::setRocket(std::wstring ldfString) {
+	this->getComponent4()->setData8(ldfString);
 }
 
 ControllablePhysicsComponent *PlayerObject::getComponent1(){ return (ControllablePhysicsComponent *) this->getComponent(1); }

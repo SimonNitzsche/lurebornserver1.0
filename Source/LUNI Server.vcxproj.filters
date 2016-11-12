@@ -240,6 +240,12 @@
     <ClInclude Include="TimedEvent.h">
       <Filter>Header Files\Mechanics</Filter>
     </ClInclude>
+    <ClInclude Include="easywsclient.hpp">
+      <Filter>Header Files\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="WebSocketService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -400,6 +406,12 @@
     </ClCompile>
     <ClCompile Include="TimedEvent.cpp">
       <Filter>Source Files\Mechanics</Filter>
+    </ClCompile>
+    <ClCompile Include="easywsclient.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="WebSocketService.cpp">
+      <Filter>Source Files\Service</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

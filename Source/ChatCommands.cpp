@@ -1517,7 +1517,7 @@ void TestCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring>
 	long long oid = ObjectID::generateObjectID();
 	
 	PlayerObject *player = (PlayerObject *)ObjectsManager::getObjectByID(s->activeCharId);
-	GenericObject* ioo = new GenericObject(4768,
+	/*GenericObject* ioo = new GenericObject(4768,
 		player->world.zone,
 		player->getComponent1()->getPosition(),
 		COMPONENT1_ROTATION(0, 0, 0, 0),
@@ -1532,10 +1532,10 @@ void TestCommandHandler::handleCommand(SessionInfo *s, std::vector<std::wstring>
 	std::vector<SessionInfo> sess = SessionsTable::getClientsInWorld(ioo->world.zone);
 	for (std::vector<SessionInfo>::iterator it = sess.begin(); it != sess.end(); ++it) {
 		WorldServer::getRM()->Construct(ioo, false, it->addr, false);
-	}
+	}*/
 
-	//RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(s->activeCharId, DISPLAY_MESSAGE_BOX);
-	//bs->Write()
+	//RakNet::BitStream *bs = WorldServerPackets::InitGameMessage(s->activeCharId, 0x14);
+	//bs->Write(true);
 	//WorldServer::sendPacket(bs, s->addr);
 }
 
