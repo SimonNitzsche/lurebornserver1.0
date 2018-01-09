@@ -14,6 +14,7 @@ int InstancesTable::registerInstance(SystemAddress addr){
 }
 
 int InstancesTable::getInstanceId(SystemAddress addr){
+	return 14;
 	std::stringstream str;
 	str << "SELECT `instanceid` FROM `instances` WHERE `server_address` = '" << addr.ToString() << "';";
 	auto qr = Database::Query(str.str());

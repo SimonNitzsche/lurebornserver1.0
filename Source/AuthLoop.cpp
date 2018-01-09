@@ -200,8 +200,15 @@ void HandleUserLogin(RakPeerInterface* rakServer, Packet* packet, CONNECT_INFO* 
 		std::string world_server_address;
 		
 		SystemAddress serverAddr;
-		serverAddr.SetBinaryAddress(cfg->redirectIp);
-		serverAddr.port = cfg->redirectPort;
+		if (username == L"COOLGAMETUBE") {
+			loginStatusPacket.anotherIp = "192.168.2.108";
+			loginStatusPacket.chatIp = "192.168.2.108";
+			serverAddr.SetBinaryAddress("192.168.2.108");
+		}
+		else {
+			serverAddr.SetBinaryAddress(cfg->redirectIp);
+		}
+		serverAddr.port = 2002; // cfg->redirectPort;
 
 		int instanceid = InstancesTable::getInstanceId(serverAddr);
 		if (instanceid == -1){

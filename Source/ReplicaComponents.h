@@ -162,14 +162,10 @@ private:
 	COMPONENT1_DATA1 data1;
 	bool flag2;
 	COMPONENT1_DATA2 data2;
-	bool flag3;
 	COMPONENT1_DATA3 data3;
-	bool flag4;
 	COMPONENT1_DATA4 data4;
-	bool flag5;
 	bool flag5_1;
 	COMPONENT1_DATA5 data5;
-	bool flag6;
 	COMPONENT1_DATA6 data6;
 	bool flag6_1;
 	COMPONENT1_VELOCITY data6_1;
@@ -186,6 +182,11 @@ public:
 
 	void writeToPacket(RakNet::BitStream *packet, REPLICA_PACKET_TYPE packetType);
 	unsigned int getComponentID();
+
+	bool flag3;
+	bool flag4;
+	bool flag5;
+	bool flag6;
 
 	void setData1(COMPONENT1_DATA1 data1);
 	COMPONENT1_DATA1 getData1();
@@ -370,11 +371,11 @@ public:
 
 class CollectibleComponent : public ReplicaComponent {
 private:
-	unsigned long LOTemplate;
+	unsigned short CollectibleID;
 public:
 	CollectibleComponent(unsigned short lot);
-	unsigned short getTemplate();
-	void setTemplate(unsigned short lot);
+	void setCollectibleID(unsigned short colID);
+	unsigned short getCollectibleID();
 	void writeToPacket(RakNet::BitStream * packet, REPLICA_PACKET_TYPE packetType);
 	unsigned int getComponentID();
 };

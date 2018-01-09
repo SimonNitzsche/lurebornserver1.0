@@ -354,19 +354,20 @@ void RigidBodyPhantomPhysicsComponent::setRot(COMPONENT20_ROTATION rot){ this->r
 
 CollectibleComponent::CollectibleComponent(unsigned short lot) {
 	this->serialization = int(CO_Collectible);
-	this->LOTemplate = lot;
+	int r = rand() % 5;
+	this->CollectibleID = (unsigned short)r;
 }
 
-unsigned short CollectibleComponent::getTemplate() {
-	return this->LOTemplate;
+void CollectibleComponent::setCollectibleID(unsigned short colID){
+	this->CollectibleID = colID;
 }
 
-void CollectibleComponent::setTemplate(unsigned short lot) {
-	this->LOTemplate = lot;
+unsigned short CollectibleComponent::getCollectibleID() {
+	return this->CollectibleID;
 }
 
 void CollectibleComponent::writeToPacket(RakNet::BitStream *packet, REPLICA_PACKET_TYPE packetType) {
-	packet->Write(LOTemplate);
+	packet->Write(CollectibleID);
 }
 
 unsigned int CollectibleComponent::getComponentID() { return 23; }

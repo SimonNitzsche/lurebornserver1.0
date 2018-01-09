@@ -16,8 +16,8 @@ Interact::Interact(long long objid, SystemAddress systemAddress) {
 		long long charid = s.activeCharId;
 		auto o = ObjectsManager::getObjectByID(objid);
 		unsigned long lot = (o!=NULL)?o->LOT:0;
+		Logger::log("INTR", "INTR", "OID: " + std::to_string(objid));
 		Logger::log("INTR", "INTR", "LOT: " + std::to_string(lot));
-
 		switch (lot) {
 		case 4009: {
 			Logger::log("INTR", "INTERACT", "Player Interacted with Bob!", LOG_NORMAL);
@@ -80,6 +80,10 @@ Interact::Interact(long long objid, SystemAddress systemAddress) {
 				   break;
 
 		default: {
+			if (objid == 70368747895179) {
+				GameMSG::knockback(charid, objid, COMPONENT1_POSITION(-20, 10, -20)); //SHIP SHOCK
+				GameMSG::playAnimation(charid, L"knockback-recovery");
+			}
 			//throw new std::exception();
 		}
 		}

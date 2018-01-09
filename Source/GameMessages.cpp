@@ -587,15 +587,21 @@ void GameMSG::resurrect(long long charid, bool immediate)
 	if (s.activeCharId > 0) {
 		long long objid = s.activeCharId;
 		ListCharacterInfo cinfo = CharactersTable::getCharacterInfo(objid);
-		
-		WorldServerPackets::CreateCharacter(s.addr, charid);
 
 		RakNet::BitStream * bs = WorldServerPackets::InitGameMessage(s.activeCharId, RESURRECT);
 		bs->Write((bool)immediate);
+		
 		std::vector<SessionInfo> sessionsz = SessionsTable::getClientsInWorld(s.zone);
 		for (unsigned int k = 0; k < sessionsz.size(); k++) {
 			WorldServer::sendPacket(bs, sessionsz.at(k).addr);
 		}
+
+		bs = WorldServerPackets::InitGameMessage(s.activeCharId, SET_RESURRECT_RESTORE_VALUES);
+		bs->Write((int)-1);
+		bs->Write((int)-1);
+		bs->Write((int)-1);
+		WorldServer::sendPacket(bs, s.addr);
+
 	}
 }
 
@@ -646,7 +652,7 @@ void GameMSG::addItemToInventoryClientSync(long long charid, long long objectID,
 	ef->Write((bool)true);
 	ef->Write((unsigned long)slotid);*/
 
-	ef->Write((bool)false);						//bBound
+	/*ef->Write((bool)false);						//bBound
 	ef->Write((bool)false);						//bIsBOE
 	ef->Write((bool)false);						//bIsBOP
 	ef->Write((bool)false);						//eLootTypeSource
@@ -662,7 +668,25 @@ void GameMSG::addItemToInventoryClientSync(long long charid, long long objectID,
 	ef->Write((float)0);
 	ef->Write((float)0);
 	ef->Write((bool)true);
-	ef->Write((unsigned long)slotid);
+	ef->Write((unsigned long)slotid);*/
+
+	ef->Write(false);
+	ef->Write(false);
+	ef->Write(false);
+	ef->Write(false);
+	ef->Write((unsigned long)0);
+	ef->Write((unsigned long)lotTemplate);
+	ef->Write((long long)0);
+	ef->Write((int)InventoryTable::getTab(lotTemplate));
+	ef->Write((unsigned long)1);
+	ef->Write((unsigned long)1);
+	ef->Write((long long)objectID);
+	ef->Write((float)0);
+	ef->Write((float)0);
+	ef->Write((float)0);
+	ef->Write(true);
+	ef->Write((int)InventoryTable::getSlotFromItem(objectID, charid));
+
 	WorldServer::sendPacket(ef, addr);
 }
 

@@ -163,7 +163,7 @@ void ObjectsManager::clientLeaveWorld(long long objid, SystemAddress addr){
 		ObjectsManager::destruct(object);
 		ObjectsManager::unregisterObject(object);
 		for (std::unordered_map<long long, ReplicaObject *>::iterator it = objects.begin(); it != objects.end(); ++it){
-			if (it->second->world == object->world){
+			if (it->second->world.zone == object->world.zone){
 				WorldServer::getRM()->Destruct(it->second, addr, false);
 			}
 		}
@@ -177,7 +177,7 @@ void ObjectsManager::clientJoinWorld(ReplicaObject * player, SystemAddress addr)
 		2) create his object for all
 	*/
 	for (std::unordered_map<long long, ReplicaObject *>::iterator it = objects.begin(); it != objects.end(); ++it){
-		if (it->second->world == player->world){
+		if (it->second->world.zone == player->world.zone){
 			ReplicaObject *ro = it->second;
 			if (ro->isConstructed == true)
 				WorldServer::getRM()->Construct(it->second, false, addr, false);

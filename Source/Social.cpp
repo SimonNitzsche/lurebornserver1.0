@@ -370,8 +370,8 @@ void Chat::sendChatMessage(SystemAddress addr, std::wstring message, std::wstrin
 		}
 	}
 
-	aw->Write((int)1); //sender Object id
-	aw->Write(u32);
+	aw->Write((long long)1); //sender Object id //was (int)1 before
+	//aw->Write(u32); //Theoretically this shouldn't be there
 	aw->Write(u16); //??
 	aw->Write((unsigned char)isMythran); //isMythran
 
