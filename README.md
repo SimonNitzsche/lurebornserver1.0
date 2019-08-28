@@ -2,6 +2,10 @@
 [![Test Coverage](https://codeclimate.com/repos/580214cd5f2d44049b000ac2/badges/3ee4b8ea7c83fd7f7318/coverage.svg)](https://codeclimate.com/repos/580214cd5f2d44049b000ac2/coverage)
 [![Issue Count](https://codeclimate.com/repos/580214cd5f2d44049b000ac2/badges/3ee4b8ea7c83fd7f7318/issue_count.svg)](https://codeclimate.com/repos/580214cd5f2d44049b000ac2/feed)
 
+
+# DISCLAIMER: Neither me or any moderator/admin or project member will provide help for setup, troubleshooting, etc.
+
+
 # LUNI  
 
 ## Setup Instructions
